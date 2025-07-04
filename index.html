@@ -60,24 +60,6 @@
     <script>
 
 		$(document).ready(function () {
-			$('#flipbook').turn({
-				width: $('#flipbook').width(),
-				height: $('#flipbook').width() * 0.38, // proporción 1200/920 ≈ 1.3
-				autoCenter: true
-			});
-
-			$(window).resize(function () {
-				$('#flipbook').turn('size', $('#flipbook').width(), $('#flipbook').width() * 0.77);
-			});
-
-			$('.left-arrow').click(function () {
-				$('#flipbook').turn('previous');
-			});
-
-			$('.right-arrow').click(function () {
-				$('#flipbook').turn('next');
-			});
-
 			// Inicializar Panzoom en cada imagen
 			document.querySelectorAll('#flipbook img').forEach(img => {
 				const panzoom = Panzoom(img, {
@@ -96,6 +78,25 @@
 					}
 				});
 			});
+
+			$('#flipbook').turn({
+				width: $('#flipbook').width(),
+				height: $('#flipbook').width() * 0.38, // proporción 1200/920 ≈ 1.3
+				autoCenter: true
+			});
+
+			$(window).resize(function () {
+				$('#flipbook').turn('size', $('#flipbook').width(), $('#flipbook').width() * 0.77);
+			});
+
+			$('.left-arrow').click(function () {
+				$('#flipbook').turn('previous');
+			});
+
+			$('.right-arrow').click(function () {
+				$('#flipbook').turn('next');
+			});
+
 		});
 
     </script>
