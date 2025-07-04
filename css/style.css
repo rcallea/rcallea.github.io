@@ -20,4 +20,72 @@ body {
   width: 100%;
   height: auto;
   display: block;
+  cursor: grab;
+  touch-action: none;
+  transition: transform 0.3s ease;
+}
+
+
+.page {
+  position: relative;
+  overflow: hidden;
+}
+
+.corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #ccc 0%, transparent 100%);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Posiciones específicas */
+.top-right {
+  top: 0;
+  right: 0;
+  transform: rotate(0deg);
+}
+
+.bottom-right {
+  bottom: 0;
+  right: 0;
+  transform: rotate(90deg);
+}
+
+.top-left {
+  top: 0;
+  left: 0;
+  transform: rotateY(180deg);
+}
+
+.bottom-left {
+  bottom: 0;
+  left: 0;
+  transform: rotate(270deg) rotateY(180deg);
+}
+
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  z-index: 1000;
+  user-select: none;
+  transition: opacity 0.3s;
+}
+
+.left-arrow {
+  left: 10px;
+}
+
+.right-arrow {
+  right: 10px;
+}
+
+.nav-arrow:hover {
+  color: rgba(0, 0, 0, 0.8);
 }
