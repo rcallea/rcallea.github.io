@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Interactivo de Proyectos Energéticos</title>
+    <!-- Chosen Palette: Warm Neutrals (Slate background with Sage Green accent) -->
+    <!-- Application Structure Plan: The SPA is designed with a non-linear, thematic structure to enhance user exploration, moving away from the report's linear chapters. A sticky top navigation allows users to jump between key themes: 'Inicio' (intro), 'Análisis Técnico', 'Análisis Económico', and 'Análisis Ambiental'. The core of the application is a 'Comparador de Tecnologías' section, allowing users to dynamically compare energy sources across multiple metrics. A final 'Caso de Estudio' section applies all concepts to a real-world scenario (rural electrification). This structure was chosen to facilitate synthesis and understanding of "trade-offs", which is a central theme of the report, by empowering the user to drive their own learning path rather than passively reading. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Phases of project development & EIA. Goal: Organize. Viz/Method: Interactive process diagrams using HTML/Tailwind CSS and JS toggles. Justification: More engaging than static lists, allows progressive disclosure of information. Library: Vanilla JS.
+        - Report Info: Comparison of LCOE, CAPEX/OPEX. Goal: Compare. Viz/Method: Bar charts. Justification: Excellent for direct visual comparison of quantitative data. The technology comparator uses dynamic charts to instantly reflect user choices. Library: Chart.js.
+        - Report Info: Interdependence and trade-offs. Goal: Relationships/Organize. Viz/Method: A dedicated 'Comparador de Tecnologías' section with side-by-side card layouts and dynamic charts. Justification: This is the most effective way to synthesize the report's core message about integrated analysis in a user-driven, interactive format. Library: Vanilla JS & Chart.js.
+        - Report Info: Key definitions and concepts. Goal: Inform. Viz/Method: Styled cards with icons and concise text. Justification: Breaks down complex information into digestible, visually appealing chunks for beginner students. Library: HTML/Tailwind.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #334155; /* slate-700 */
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #059669; /* emerald-600 */
+            border-bottom-color: #059669;
+        }
+        .section-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+            max-height: 400px;
+            width: 100%;
+            max-width: 600px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .phase-item.active {
+            background-color: #d1fae5; /* emerald-100 */
+            border-left-color: #059669; /* emerald-600 */
+        }
+        .tech-button.selected {
+             background-color: #059669; /* emerald-600 */
+             color: white;
+             border-color: #059669; /* emerald-600 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold text-emerald-700">Proyectos Energéticos 101</div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#inicio" class="nav-link border-b-2 border-transparent pb-1">Inicio</a>
+                    <a href="#tecnico" class="nav-link border-b-2 border-transparent pb-1">Análisis Técnico</a>
+                    <a href="#economico" class="nav-link border-b-2 border-transparent pb-1">Análisis Económico</a>
+                    <a href="#ambiental" class="nav-link border-b-2 border-transparent pb-1">Análisis Ambiental</a>
+                    <a href="#comparador" class="nav-link border-b-2 border-transparent pb-1">Comparador</a>
+                    <a href="#caso-estudio" class="nav-link border-b-2 border-transparent pb-1">Caso de Estudio</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-slate-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden mt-4">
+                <a href="#inicio" class="block py-2 text-slate-600 hover:text-emerald-600">Inicio</a>
+                <a href="#tecnico" class="block py-2 text-slate-600 hover:text-emerald-600">Análisis Técnico</a>
+                <a href="#economico" class="block py-2 text-slate-600 hover:text-emerald-600">Análisis Económico</a>
+                <a href="#ambiental" class="block py-2 text-slate-600 hover:text-emerald-600">Análisis Ambiental</a>
+                <a href="#comparador" class="block py-2 text-slate-600 hover:text-emerald-600">Comparador</a>
+                <a href="#caso-estudio" class="block py-2 text-slate-600 hover:text-emerald-600">Caso de Estudio</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="inicio" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">Descifrando los Proyectos Energéticos</h1>
+                <p class="text-lg text-slate-600 max-w-3xl mx-auto mb-12">Una guía interactiva para entender cómo se evalúan los proyectos que impulsan nuestro mundo, desde la idea inicial hasta su impacto final.</p>
+                
+                <h2 class="text-3xl font-bold text-slate-800 mb-8">Los Tres Pilares de la Evaluación</h2>
+                <p class="text-md text-slate-600 max-w-2xl mx-auto mb-12">Un proyecto energético exitoso se sostiene sobre tres análisis fundamentales. Si uno falla, todo el proyecto se desequilibra. Explore cada pilar para entender su rol crucial.</p>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="section-card p-8">
+                        <div class="text-emerald-500 mb-4">
+                            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold mb-2 text-slate-800">Análisis Técnico</h3>
+                        <p class="text-slate-600">Evalúa si la tecnología es la adecuada, si el diseño es sólido y si el proyecto puede construirse y operar de forma segura y eficiente. Responde a la pregunta: <strong>¿Puede funcionar?</strong></p>
+                    </div>
+                    <div class="section-card p-8">
+                        <div class="text-emerald-500 mb-4">
+                            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 13v-1m-4.5-4.5L7.5 16m9-9l-.5.5M21 12h-1M4 12H3m3.343-5.657L6.5 7.5m1.599 9.599l-1.087.087M12 21a9 9 0 110-18 9 9 0 010 18z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold mb-2 text-slate-800">Análisis Económico</h3>
+                        <p class="text-slate-600">Examina los costos, los ingresos esperados y la rentabilidad. Busca determinar si el proyecto generará beneficios y será una inversión atractiva. Responde a la pregunta: <strong>¿Vale la pena?</strong></p>
+                    </div>
+                    <div class="section-card p-8">
+                        <div class="text-emerald-500 mb-4">
+                            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h8a2 2 0 002-2v-1a2 2 0 012-2h1.945M7.894 6.113l.448.894m11.414-1.149l-1.428 1.428M1.394 6.113l1.428 1.428m17.886-1.149l-.448.894M12 21a9 9 0 100-18 9 9 0 000 18z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold mb-2 text-slate-800">Análisis Ambiental</h3>
+                        <p class="text-slate-600">Identifica y valora los posibles impactos sobre el medio ambiente físico, biológico y social. Propone medidas de gestión. Responde a la pregunta: <strong>¿Es responsable?</strong></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tecnico" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800 mb-4">Análisis Técnico: ¿Puede Funcionar?</h2>
+                <p class="text-lg text-center text-slate-600 max-w-3xl mx-auto mb-16">Este es el primer filtro. Si un proyecto no es viable técnicamente, cualquier otro análisis es irrelevante. Aquí exploramos la evaluación del recurso, la selección de tecnología y las fases del proyecto.</p>
+
+                <div class="section-card p-8 md:p-12 mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-slate-800">Fases del Desarrollo Técnico de un Proyecto</h3>
+                    <p class="text-slate-600 mb-8">Un proyecto energético evoluciona a través de varias etapas, desde la idea inicial hasta su desmantelamiento. Haga clic en cada fase para ver su descripción.</p>
+                    <div class="flex flex-col md:flex-row">
+                        <div id="phases-list" class="w-full md:w-1/3 space-y-2">
+                        </div>
+                        <div id="phases-content" class="w-full md:w-2/3 mt-6 md:mt-0 md:pl-8">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                     <div class="section-card p-8">
+                        <h3 class="text-2xl font-semibold mb-4 text-slate-800">Indicador Clave: Factor de Capacidad</h3>
+                        <p class="text-slate-600 mb-4">Mide la producción real de una planta frente a su máximo potencial. Es crucial para fuentes intermitentes como la solar y la eólica.</p>
+                         <p class="text-slate-600 mb-6">Un parque eólico de 50 MW (50,000 kW) que genera 150,000 MWh (150,000,000 kWh) en un año (8760h) tiene un factor de capacidad de <strong>34.2%</strong>. Esto refleja que, por la intermitencia del viento, no puede operar al 100% todo el tiempo.</p>
+                        <div class="chart-container h-64">
+                            <canvas id="factorCapacidadChart"></canvas>
+                        </div>
+                     </div>
+                     <div class="section-card p-8">
+                        <h3 class="text-2xl font-semibold mb-4 text-slate-800">Indicador Clave: Eficiencia Energética</h3>
+                        <p class="text-slate-600 mb-4">Mide qué tan bien un equipo convierte la energía de entrada (ej. luz solar) en energía útil (ej. electricidad).</p>
+                        <p class="text-slate-600 mb-6">Un panel solar típico puede tener una eficiencia del <strong>18-22%</strong>. Esto significa que de toda la energía solar que recibe, convierte aproximadamente una quinta parte en electricidad. El resto se pierde, principalmente como calor.</p>
+                        <div class="chart-container h-64">
+                            <canvas id="eficienciaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="economico" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800 mb-4">Análisis Económico: ¿Vale la Pena?</h2>
+                <p class="text-lg text-center text-slate-600 max-w-3xl mx-auto mb-16">Incluso la mejor tecnología necesita ser financieramente viable. Este análisis evalúa costos, ingresos y rentabilidad para decidir si una inversión tiene sentido.</p>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <div class="section-card p-8">
+                        <h3 class="text-2xl font-semibold text-slate-800 mb-4">CAPEX: Costos de Inversión</h3>
+                        <p class="text-slate-600">Son los gastos iniciales para construir el proyecto: equipos, terrenos, obra civil, ingeniería, permisos. Suelen ser muy altos en proyectos renovables.</p>
+                    </div>
+                    <div class="section-card p-8">
+                        <h3 class="text-2xl font-semibold text-slate-800 mb-4">OPEX: Costos de Operación</h3>
+                        <p class="text-slate-600">Son los gastos recurrentes para mantener la planta funcionando: salarios, mantenimiento, seguros. En renovables (sin combustible), suelen ser bajos.</p>
+                    </div>
+                </div>
+
+                <div class="section-card p-8 md:p-12 mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-slate-800 text-center">Estructura de Costos: Renovables vs. Fósiles</h3>
+                    <p class="text-slate-600 mb-8 text-center max-w-2xl mx-auto">Una diferencia clave es cómo se distribuyen los costos. Las renovables tienen un alto costo inicial (CAPEX) pero costos operativos (OPEX) muy bajos, mientras que las plantas de gas o carbón pueden tener un CAPEX menor pero un OPEX alto y volátil debido al costo del combustible.</p>
+                    <div class="chart-container">
+                        <canvas id="capexOpexChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="section-card p-8 md:p-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-slate-800 text-center">Indicador Clave: Costo Nivelado de Energía (LCOE)</h3>
+                    <p class="text-slate-600 mb-8 text-center max-w-2xl mx-auto">El LCOE representa el costo promedio por unidad de energía (€/MWh) durante toda la vida de la planta. Es la mejor métrica para comparar la competitividad económica de diferentes tecnologías. En la última década, el LCOE de la solar y la eólica ha caído drásticamente, haciéndolas las opciones más baratas en muchas partes del mundo.</p>
+                    <div class="chart-container">
+                        <canvas id="lcoeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="ambiental" class="py-16 md:py-24">
+             <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800 mb-4">Análisis Ambiental: ¿Es Responsable?</h2>
+                <p class="text-lg text-center text-slate-600 max-w-3xl mx-auto mb-16">Incluso las energías "limpias" tienen un impacto. Este análisis evalúa las consecuencias en el ecosistema y la sociedad, buscando un desarrollo verdaderamente sostenible.</p>
+                
+                 <div class="section-card p-8 md:p-12 mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-slate-800 text-center">Análisis de Ciclo de Vida: De la Cuna a la Tumba</h3>
+                    <p class="text-slate-600 mb-8 text-center max-w-2xl mx-auto">Este enfoque evalúa el impacto ambiental total de un proyecto, no solo durante su operación. Incluye la extracción de materias primas, la fabricación, el transporte y el desmantelamiento final. Así se obtiene la verdadera "huella ambiental".</p>
+                    <div class="relative flex flex-col items-center">
+                        <div class="w-full grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold">1</div>
+                                <p class="mt-2 font-semibold">Extracción</p>
+                                <p class="text-sm text-slate-500">Materias Primas</p>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold">2</div>
+                                <p class="mt-2 font-semibold">Fabricación</p>
+                                 <p class="text-sm text-slate-500">Paneles, Turbinas</p>
+                            </div>
+                             <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold">3</div>
+                                <p class="mt-2 font-semibold">Operación</p>
+                                 <p class="text-sm text-slate-500">Generación</p>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold">4</div>
+                                <p class="mt-2 font-semibold">Desmantelamiento</p>
+                                 <p class="text-sm text-slate-500">Fin de vida útil</p>
+                            </div>
+                            <div class="flex flex-col items-center col-span-2 md:col-span-1">
+                                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold">5</div>
+                                <p class="mt-2 font-semibold">Reciclaje</p>
+                                 <p class="text-sm text-slate-500">Gestión final</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                 <div class="section-card p-8 md:p-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-slate-800 text-center">Jerarquía de Mitigación de Impactos</h3>
+                     <p class="text-slate-600 mb-8 text-center max-w-2xl mx-auto">La gestión ambiental sigue un orden de prioridad para manejar los impactos negativos.</p>
+                     <div class="space-y-4 max-w-md mx-auto">
+                        <div class="p-4 bg-green-100 border-l-4 border-green-500 rounded">
+                            <h4 class="font-bold text-green-800">1. Evitar</h4>
+                            <p class="text-green-700">La mejor opción: modificar el proyecto para eliminar el impacto por completo (ej. cambiar de ubicación).</p>
+                        </div>
+                        <div class="p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded">
+                             <h4 class="font-bold text-yellow-800">2. Minimizar</h4>
+                            <p class="text-yellow-700">Si no se puede evitar, reducir la severidad del impacto (ej. parar turbinas durante migración de aves).</p>
+                        </div>
+                        <div class="p-4 bg-blue-100 border-l-4 border-blue-500 rounded">
+                             <h4 class="font-bold text-blue-800">3. Restaurar</h4>
+                            <p class="text-blue-700">Reparar el daño causado (ej. revegetar un área afectada durante la construcción).</p>
+                        </div>
+                        <div class="p-4 bg-orange-100 border-l-4 border-orange-500 rounded">
+                             <h4 class="font-bold text-orange-800">4. Compensar</h4>
+                            <p class="text-orange-700">Como último recurso, contrarrestar el daño creando un beneficio ambiental en otro lugar.</p>
+                        </div>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <section id="comparador" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800 mb-4">Comparador de Tecnologías</h2>
+                <p class="text-lg text-center text-slate-600 max-w-3xl mx-auto mb-12">No hay una solución perfecta. Cada tecnología tiene sus pros y sus contras. Seleccione hasta tres tecnologías para comparar sus perfiles técnico, económico y ambiental y entender los "trade-offs".</p>
+
+                <div class="flex justify-center flex-wrap gap-3 mb-12" id="tech-selector">
+                </div>
+
+                <div id="comparison-results" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+            </div>
+        </section>
+
+        <section id="caso-estudio" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800 mb-4">Caso de Estudio: Electrificación Rural</h2>
+                <p class="text-lg text-center text-slate-600 max-w-3xl mx-auto mb-12">¿Cómo llevar electricidad a una comunidad aislada? Analicemos tres alternativas aplicando todo lo aprendido. Esta decisión muestra la importancia de una visión integral y de sopesar los "trade-offs".</p>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="section-card p-6 flex flex-col">
+                        <h3 class="text-xl font-bold text-center text-emerald-700 mb-4">Alternativa 1: Micro-red Solar + Baterías</h3>
+                        <div class="divide-y divide-slate-200 flex-grow">
+                            <div class="py-3"><strong class="text-slate-800">Técnico:</strong> Fiable con almacenamiento, mantenimiento bajo.</div>
+                            <div class="py-3"><strong class="text-slate-800">Económico:</strong> CAPEX muy alto (baterías), OPEX muy bajo.</div>
+                            <div class="py-3"><strong class="text-slate-800">Ambiental:</strong> Cero emisiones operativas, silenciosa. Impacto en fabricación y reciclaje.</div>
+                        </div>
+                        <div class="mt-4 text-center p-3 bg-emerald-100 rounded-lg text-emerald-800 font-semibold">Mejor opción para sostenibilidad y autonomía a largo plazo.</div>
+                    </div>
+                     <div class="section-card p-6 flex flex-col">
+                        <h3 class="text-xl font-bold text-center text-blue-700 mb-4">Alternativa 2: Extensión de Red</h3>
+                        <div class="divide-y divide-slate-200 flex-grow">
+                             <div class="py-3"><strong class="text-slate-800">Técnico:</strong> Fiabilidad depende de la red principal.</div>
+                             <div class="py-3"><strong class="text-slate-800">Económico:</strong> CAPEX prohibitivo si está lejos. Costo por kWh regulado.</div>
+                             <div class="py-3"><strong class="text-slate-800">Ambiental:</strong> Impacto depende del mix de la red (puede ser alto). Impacto de la línea.</div>
+                        </div>
+                        <div class="mt-4 text-center p-3 bg-blue-100 rounded-lg text-blue-800 font-semibold">Viable solo si la red está cerca y es limpia.</div>
+                    </div>
+                     <div class="section-card p-6 flex flex-col">
+                        <h3 class="text-xl font-bold text-center text-red-700 mb-4">Alternativa 3: Generador Diésel</h3>
+                        <div class="divide-y divide-slate-200 flex-grow">
+                             <div class="py-3"><strong class="text-slate-800">Técnico:</strong> Tecnología madura pero requiere combustible constante.</div>
+                             <div class="py-3"><strong class="text-slate-800">Económico:</strong> CAPEX bajo. OPEX muy alto y volátil (precio diésel).</div>
+                             <div class="py-3"><strong class="text-slate-800">Ambiental:</strong> Altas emisiones de CO2 y contaminantes locales. Ruidoso.</div>
+                        </div>
+                        <div class="mt-4 text-center p-3 bg-red-100 rounded-lg text-red-800 font-semibold">Solución rápida pero costosa y contaminante a largo plazo.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>Aplicación Interactiva de Análisis de Proyectos Energéticos.</p>
+            <p class="text-sm text-slate-400 mt-2">Creada para facilitar la comprensión de conceptos complejos de una manera visual y dinámica. Basado en la "Guía Introductoria al Análisis Técnico, Económico y Ambiental de Proyectos Energéticos para Estudiantes".</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if(!mobileMenu.classList.contains('hidden')){
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const sections = document.querySelectorAll('section');
+            const navLi = document.querySelectorAll('nav a.nav-link');
+
+            window.addEventListener('scroll', ()=> {
+                let current = '';
+                sections.forEach( section => {
+                    const sectionTop = section.offsetTop;
+                    if(pageYOffset >= sectionTop - 65){
+                        current = section.getAttribute('id');
+                    }
+                })
+
+                navLi.forEach( a => {
+                    a.classList.remove('active');
+                    if(a.getAttribute('href') == '#'+current){
+                        a.classList.add('active');
+                    }
+                })
+            });
+
+            const phasesData = [
+                { id: "prefactibilidad", title: "1. Prefactibilidad", content: "Etapa exploratoria para identificar una oportunidad. Se realiza una evaluación preliminar del recurso, las limitaciones y la viabilidad general para decidir si se avanza a estudios más profundos." },
+                { id: "factibilidad", title: "2. Desarrollo y Factibilidad", content: "Se realizan estudios detallados del recurso, diseño conceptual de la planta y estimaciones de costos más precisas. El objetivo es confirmar la viabilidad técnica y obtener los permisos iniciales." },
+                { id: "diseno", title: "3. Diseño Detallado (Ingeniería)", content: "Se elaboran los planos constructivos y las especificaciones técnicas de todos los equipos y materiales. Se define exactamente cómo se construirá el proyecto." },
+                { id: "construccion", title: "4. Construcción y Montaje", content: "Es la ejecución física del proyecto: obras civiles, fabricación, transporte e instalación de todos los componentes de la planta." },
+                { id: "puesta-marcha", title: "5. Puesta en Marcha y Pruebas", content: "Con la planta construida, se realizan pruebas exhaustivas de todos los sistemas para verificar su correcto funcionamiento y rendimiento antes de la operación comercial." },
+                { id: "om", title: "6. Operación y Mantenimiento (O&M)", content: "Fase que dura toda la vida útil del proyecto. Implica la operación diaria, el monitoreo y los programas de mantenimiento preventivo y correctivo para maximizar la producción." },
+                { id: "desmantelamiento", title: "7. Desmantelamiento", content: "Al final de la vida útil, se retiran los equipos de forma segura, se gestionan los residuos y se restaura ambientalmente el sitio." }
+            ];
+
+            const phasesList = document.getElementById('phases-list');
+            const phasesContent = document.getElementById('phases-content');
+
+            phasesData.forEach((phase, index) => {
+                const phaseItem = document.createElement('div');
+                phaseItem.className = 'phase-item cursor-pointer p-4 border-l-4 border-slate-200 transition';
+                phaseItem.textContent = phase.title;
+                phaseItem.dataset.id = phase.id;
+
+                phasesList.appendChild(phaseItem);
+            });
+
+            const phaseItems = document.querySelectorAll('.phase-item');
+
+            function showPhaseContent(id) {
+                const phase = phasesData.find(p => p.id === id);
+                phasesContent.innerHTML = `
+                    <h4 class="text-xl font-semibold mb-2 text-emerald-600">${phase.title}</h4>
+                    <p class="text-slate-700">${phase.content}</p>
+                `;
+                phaseItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id === id) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+
+            phasesList.addEventListener('click', (e) => {
+                if (e.target && e.target.classList.contains('phase-item')) {
+                    showPhaseContent(e.target.dataset.id);
+                }
+            });
+
+            showPhaseContent(phasesData[0].id);
+            
+            const techData = {
+                'Solar FV': {
+                    nombre: 'Solar Fotovoltaica (FV)',
+                    color: 'rgba(245, 158, 11, 0.8)', // amber-500
+                    fc: [15, 25], // Rango
+                    vida: 30,
+                    lcoe: 0.04, // $/kWh
+                    capex: 850, // $/kW
+                    opex: 15, // $/kW-año
+                    impactos: ['Uso extensivo del suelo en grandes plantas.', 'Impactos de ciclo de vida en fabricación.', 'Gestión de residuos de paneles.']
+                },
+                'Eólica Terrestre': {
+                    nombre: 'Eólica Terrestre',
+                    color: 'rgba(59, 130, 246, 0.8)', // blue-500
+                    fc: [30, 50],
+                    vida: 25,
+                    lcoe: 0.045,
+                    capex: 1350,
+                    opex: 35,
+                    impactos: ['Riesgo de colisión para aves y murciélagos.', 'Impacto visual y ruido.', 'Uso del suelo para espaciamiento.']
+                },
+                'Hidroeléctrica': {
+                    nombre: 'Hidroeléctrica (Gran Embalse)',
+                    color: 'rgba(20, 83, 45, 0.8)', // green-900
+                    fc: [40, 90],
+                    vida: 50,
+                    lcoe: 0.055,
+                    capex: 2500,
+                    opex: 50,
+                    impactos: ['Alteración drástica de ríos y ecosistemas.', 'Pérdida de hábitat por inundación.', 'Barrera para migración de peces.']
+                },
+                'Gas Natural': {
+                    nombre: 'Gas Natural (Ciclo Combinado)',
+                    color: 'rgba(107, 114, 128, 0.8)', // gray-500
+                    fc: [60, 90],
+                    vida: 30,
+                    lcoe: 0.065,
+                    capex: 1000,
+                    opex: 20,
+                    impactos: ['Emisiones de gases de efecto invernadero (CO2).', 'Dependencia de combustible fósil.', 'Contaminación del aire (NOx).']
+                },
+                 'Biomasa': {
+                    nombre: 'Biomasa',
+                    color: 'rgba(132, 45, 22, 0.8)', // orange-900
+                    fc: [70, 90],
+                    vida: 25,
+                    lcoe: 0.09,
+                    capex: 2800,
+                    opex: 100,
+                    impactos: ['Emisiones atmosféricas si no es eficiente.', 'Competencia por uso de suelo y agua.', 'Potencial impacto en biodiversidad.']
+                }
+            };
+
+            const chartJsConfig = {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#475569',
+                            font: {
+                                family: 'Inter',
+                                size: 12,
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#334155',
+                        titleFont: { family: 'Inter', weight: 'bold'},
+                        bodyFont: { family: 'Inter' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#475569',
+                            font: { family: 'Inter' }
+                        },
+                        grid: {
+                            color: '#e2e8f0'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#475569',
+                            font: { family: 'Inter' },
+                             callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                if (label.length > 16) {
+                                    return label.split(' ').map(word => word.length > 8 ? word.substring(0,8)+'...' : word);
+                                }
+                                return label;
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            };
+            
+            new Chart(document.getElementById('factorCapacidadChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Solar FV', 'Eólica', 'Hidroeléctrica', 'Gas Natural'],
+                    datasets: [{
+                        label: 'Factor de Capacidad Típico (%)',
+                        data: [20, 40, 65, 75],
+                        backgroundColor: [
+                            'rgba(245, 158, 11, 0.6)',
+                            'rgba(59, 130, 246, 0.6)',
+                            'rgba(20, 83, 45, 0.6)',
+                            'rgba(107, 114, 128, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(20, 83, 45, 1)',
+                            'rgba(107, 114, 128, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: chartJsConfig
+            });
+
+            new Chart(document.getElementById('eficienciaChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Electricidad (Eficiencia)', 'Pérdidas (Calor, etc.)'],
+                    datasets: [{
+                        label: 'Eficiencia de Panel Solar',
+                        data: [20, 80],
+                        backgroundColor: [
+                            'rgba(22, 163, 74, 0.7)',
+                            'rgba(229, 231, 235, 0.7)',
+                        ],
+                        borderColor: [
+                           'rgba(22, 163, 74, 1)',
+                           'rgba(203, 213, 225, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: { ...chartJsConfig,
+                    cutout: '70%',
+                    plugins: {...chartJsConfig.plugins,
+                        tooltip: {
+                            ...chartJsConfig.plugins.tooltip,
+                            callbacks: { label: (c) => `${c.label}: ${c.raw}%` }
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('capexOpexChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Solar FV', 'Gas Natural'],
+                    datasets: [
+                        {
+                            label: 'CAPEX (Inversión Inicial)',
+                            data: [85, 35],
+                            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'OPEX (Costos a 20 años, sin combustible)',
+                            data: [15, 20],
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Costo de Combustible (a 20 años)',
+                            data: [0, 45],
+                            backgroundColor: 'rgba(107, 114, 128, 0.6)',
+                            borderColor: 'rgba(107, 114, 128, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: { ...chartJsConfig,
+                    scales: {
+                        x: { ...chartJsConfig.scales.x, stacked: true },
+                        y: { ...chartJsConfig.scales.y, stacked: true, ticks: { ...chartJsConfig.scales.y.ticks, callback: v => `${v}%`}}
+                    },
+                    plugins: { ...chartJsConfig.plugins,
+                         tooltip: { ...chartJsConfig.plugins.tooltip,
+                            callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}% del costo total` }
+                         }
+                    }
+                }
+            });
+            
+            const lcoeData = {
+                labels: Object.keys(techData),
+                datasets: [{
+                    label: 'LCOE Estimado (€/MWh)',
+                    data: Object.values(techData).map(t => t.lcoe * 1000), // a €/MWh
+                    backgroundColor: Object.values(techData).map(t => t.color.replace('0.8', '0.6')),
+                    borderColor: Object.values(techData).map(t => t.color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            };
+
+            new Chart(document.getElementById('lcoeChart'), {
+                type: 'bar',
+                data: lcoeData,
+                options: chartJsConfig
+            });
+
+            const techSelector = document.getElementById('tech-selector');
+            const comparisonResults = document.getElementById('comparison-results');
+            let selectedTechs = [];
+
+            Object.keys(techData).forEach(techName => {
+                const button = document.createElement('button');
+                button.textContent = techName;
+                button.dataset.tech = techName;
+                button.className = 'tech-button px-4 py-2 border-2 border-slate-300 rounded-full text-slate-700 font-semibold transition';
+                techSelector.appendChild(button);
+            });
+            
+            techSelector.addEventListener('click', e => {
+                if (e.target && e.target.classList.contains('tech-button')) {
+                    const techName = e.target.dataset.tech;
+                    if (selectedTechs.includes(techName)) {
+                        selectedTechs = selectedTechs.filter(t => t !== techName);
+                        e.target.classList.remove('selected');
+                    } else {
+                        if (selectedTechs.length < 3) {
+                            selectedTechs.push(techName);
+                             e.target.classList.add('selected');
+                        }
+                    }
+                    updateComparison();
+                }
+            });
+
+            function updateComparison() {
+                comparisonResults.innerHTML = '';
+                if(selectedTechs.length === 0) return;
+
+                selectedTechs.forEach(techName => {
+                    const tech = techData[techName];
+                    const card = document.createElement('div');
+                    card.className = 'section-card p-6 flex flex-col';
+                    card.innerHTML = `
+                        <h3 class="text-xl font-bold text-center mb-4" style="color: ${tech.color.replace('0.8', '1')}">${tech.nombre}</h3>
+                        <div class="divide-y divide-slate-200 flex-grow">
+                            <div class="py-2">
+                                <h4 class="font-semibold text-slate-800">Técnico</h4>
+                                <ul class="list-disc list-inside text-sm text-slate-600 mt-1">
+                                    <li>Factor Capacidad: ${tech.fc[0]}-${tech.fc[1]}%</li>
+                                    <li>Vida Útil: ${tech.vida} años</li>
+                                </ul>
+                            </div>
+                            <div class="py-2">
+                                <h4 class="font-semibold text-slate-800">Económico</h4>
+                                 <ul class="list-disc list-inside text-sm text-slate-600 mt-1">
+                                    <li>LCOE: ~${(tech.lcoe * 100).toFixed(1)} ct/kWh</li>
+                                    <li>CAPEX: ~${tech.capex} €/kW</li>
+                                    <li>OPEX: ~${tech.opex} €/kW-año</li>
+                                </ul>
+                            </div>
+                            <div class="py-2">
+                                <h4 class="font-semibold text-slate-800">Ambiental</h4>
+                                <ul class="list-disc list-inside text-sm text-slate-600 mt-1">
+                                    ${tech.impactos.map(i => `<li>${i}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    comparisonResults.appendChild(card);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

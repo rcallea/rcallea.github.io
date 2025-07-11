@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Introductoria al Análisis de Proyectos Energéticos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            overflow: hidden;
+        }
+
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            display: none;
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-bottom: 25px;
+            color: #4fc3f7;
+            border-bottom: 2px solid #4fc3f7;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.5em;
+            margin: 20px 0 15px 0;
+            color: #81c784;
+        }
+
+        p, li {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background: rgba(255, 193, 7, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1.1em;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: #4fc3f7;
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            border-left: 4px solid #4fc3f7;
+        }
+
+        .example-box {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid rgba(255, 152, 0, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-counter" id="slideCounter">1 / 15</div>
+
+    <div class="slideshow-container">
+        <!-- Slide 1: Título -->
+        <div class="slide active">
+            <h1>Guía Introductoria al Análisis Técnico, Económico y Ambiental de Proyectos Energéticos</h1>
+            <div style="text-align: center; margin: 50px 0;">
+                <h2 style="border: none; color: #81c784;">Para Estudiantes</h2>
+                <p style="font-size: 1.3em; margin-top: 40px;">
+                    Una herramienta fundamental para tomar decisiones informadas en el desarrollo de proyectos que no solo sean viables desde el punto de vista de la ingeniería y las finanzas, sino también sostenibles y respetuosos con nuestro planeta.
+                </p>
+            </div>
+            <div style="text-align: center; margin-top: 60px;">
+                <p style="font-size: 1.1em; opacity: 0.8;">
+                    Comprender estos análisis es clave para concebir proyectos energéticos verdaderamente exitosos y sostenibles
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Introducción y Propósito -->
+        <div class="slide">
+            <h2>Introducción y Propósito</h2>
+            <h3>¡Bienvenidos al fascinante mundo de los proyectos energéticos!</h3>
+            <p>Este documento ha sido diseñado pensando en estudiantes que se inician en el estudio de cómo se conciben, evalúan y desarrollan las iniciativas que buscan generar la energía que mueve nuestro mundo.</p>
+            
+            <h3>Objetivo Principal</h3>
+            <p>Proporcionar una <span class="highlight">base sólida y comprensible</span> sobre cómo se analizan estos proyectos desde tres ángulos cruciales:</p>
+            <ul>
+                <li><strong>Técnico:</strong> ¿Puede funcionar este proyecto?</li>
+                <li><strong>Económico:</strong> ¿Vale la pena financieramente?</li>
+                <li><strong>Ambiental:</strong> ¿Es responsable con el entorno?</li>
+            </ul>
+
+            <div class="warning-box">
+                <p><strong>Importante:</strong> La verdadera medida del éxito de un proyecto energético radica en una visión amplia que considere su impacto en el entorno natural y social, su viabilidad a lo largo de décadas de operación, y su contribución real a un futuro energético más limpio, seguro y justo.</p>
+            </div>
+        </div>
+
+        <!-- Slide 3: Los Tres Pilares Interconectados -->
+        <div class="slide">
+            <h2>Los Tres Pilares del Análisis Energético</h2>
+            <p>Los proyectos energéticos se someten a tres tipos principales de análisis, que podemos visualizar como <span class="highlight">las tres patas de un taburete</span>: si una falla, el conjunto se desequilibra.</p>
+
+            <div class="two-column">
+                <div>
+                    <h3>🔧 Análisis Técnico</h3>
+                    <p><strong>Pregunta clave:</strong> ¿Puede funcionar este proyecto?</p>
+                    <ul>
+                        <li>Evalúa la tecnología propuesta</li>
+                        <li>Verifica el recurso energético disponible</li>
+                        <li>Analiza el diseño de ingeniería</li>
+                        <li>Determina si puede construirse y operarse eficientemente</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>💰 Análisis Económico</h3>
+                    <p><strong>Pregunta clave:</strong> ¿Vale la pena financieramente?</p>
+                    <ul>
+                        <li>Examina costos de inversión y operación</li>
+                        <li>Evalúa ingresos esperados</li>
+                        <li>Determina la rentabilidad general</li>
+                        <li>Analiza si generará retorno atractivo</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>🌱 Análisis Ambiental</h3>
+            <p><strong>Pregunta clave:</strong> ¿Es este proyecto responsable con el entorno?</p>
+            <ul>
+                <li>Identifica impactos sobre el medio ambiente físico (aire, agua, suelo)</li>
+                <li>Evalúa efectos en el medio biológico (flora, fauna, ecosistemas)</li>
+                <li>Analiza impactos socioeconómicos (comunidades, empleo, salud)</li>
+                <li>Propone medidas para prevenir, mitigar o compensar efectos adversos</li>
+            </ul>
+
+            <div class="example-box">
+                <p><strong>Interconexión Crucial:</strong> Estos tres análisis no son compartimentos estancos. Una decisión técnica puede tener profundas implicaciones económicas y ambientales, y viceversa.</p>
+            </div>
+        </div>
+
+        <!-- Slide 4: Análisis Técnico - Conceptos Fundamentales -->
+        <div class="slide">
+            <h2>Análisis Técnico: Conceptos Fundamentales</h2>
+            
+            <h3>Definición y Objetivos</h3>
+            <p>El análisis técnico es el <span class="highlight">estudio sistemático</span> que evalúa la factibilidad, el diseño y la implementación de un proyecto energético desde una perspectiva de ingeniería y operativa.</p>
+
+            <h3>Objetivos Clave</h3>
+            <ul>
+                <li>Verificar la disponibilidad y calidad del recurso energético primario</li>
+                <li>Seleccionar la tecnología de conversión más apropiada y eficiente</li>
+                <li>Diseñar las instalaciones e infraestructura necesaria</li>
+                <li>Estimar la producción energética esperada</li>
+                <li>Identificar requisitos de operación y mantenimiento</li>
+                <li>Evaluar riesgos técnicos y proponer medidas de mitigación</li>
+                <li>Asegurar cumplimiento de normativas y estándares</li>
+            </ul>
+
+            <div class="warning-box">
+                <p><strong>¿Por qué es el primer paso?</strong> Si un proyecto no es viable técnicamente, cualquier análisis económico o ambiental posterior carecerá de sentido práctico. Una base técnica sólida es el cimiento sobre el cual se construyen todas las demás evaluaciones.</p>
+            </div>
+        </div>
+
+        <!-- Slide 5: Fases del Desarrollo Técnico -->
+        <div class="slide">
+            <h2>Fases del Desarrollo Técnico</h2>
+            <p>El desarrollo técnico es un proceso complejo que se despliega a través de varias fases secuenciales. Cada fase tiene objetivos específicos y se basa en los resultados de la anterior.</p>
+
+            <div style="margin: 20px 0;">
+                <h3>1. Evaluación Inicial/Prefactibilidad</h3>
+                <p>Etapa exploratoria donde se identifica una oportunidad de proyecto y se realiza evaluación preliminar del recurso energético.</p>
+
+                <h3>2. Desarrollo y Factibilidad</h3>
+                <p>Estudios detallados: caracterización precisa del recurso, selección preliminar de tecnología, diseño conceptual, estimación de costos.</p>
+
+                <h3>3. Diseño Detallado (Ingeniería)</h3>
+                <p>Elaboración del diseño de ingeniería detallado: planos constructivos, especificaciones técnicas, planificación de obra civil.</p>
+
+                <h3>4. Construcción y Montaje</h3>
+                <p>Ejecución física del proyecto: obras civiles, fabricación y transporte de equipos, instalación y montaje, pruebas de subsistemas.</p>
+
+                <h3>5. Puesta en Marcha y Pruebas</h3>
+                <p>Pruebas exhaustivas de sistemas, conexión a red, obtención de licencias de operación (CAP y CAD).</p>
+
+                <h3>6. Operación y Mantenimiento (O&M)</h3>
+                <p>Operación diaria, monitoreo continuo, mantenimiento preventivo y correctivo durante toda la vida útil (20-30+ años).</p>
+
+                <h3>7. Desmantelamiento</h3>
+                <p>Retirada segura de equipos, gestión de residuos, restauración ambiental del sitio.</p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Evaluación de Recursos Energéticos -->
+        <div class="slide">
+            <h2>Evaluación de Recursos Energéticos</h2>
+            <p>La evaluación del recurso energético es la <span class="highlight">piedra angular</span> de cualquier proyecto de generación de energía.</p>
+
+            <h3>Tipos de Potencial Energético</h3>
+            <ul>
+                <li><strong>Potencial bruto:</strong> Cantidad total de energía disponible sin considerar limitaciones</li>
+                <li><strong>Potencial técnico:</strong> Fracción aprovechable con tecnología actual</li>
+                <li><strong>Potencial económico:</strong> Parte rentable bajo condiciones económicas actuales</li>
+                <li><strong>Potencial sostenible:</strong> Porción compatible con protección ambiental</li>
+            </ul>
+
+            <h3>Herramientas y Técnicas</h3>
+            <div class="two-column">
+                <div>
+                    <h4>Datos y Mediciones</h4>
+                    <ul>
+                        <li>Datos históricos y satelitales</li>
+                        <li>Mediciones in situ</li>
+                        <li>Torres anemométricas</li>
+                        <li>Piranómetros y pirheliómetros</li>
+                        <li>Estaciones de aforo</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Análisis y Modelado</h4>
+                    <ul>
+                        <li>Modelado y simulación (WRF)</li>
+                        <li>Sistemas de Información Geográfica (SIG)</li>
+                        <li>Software especializado</li>
+                        <li>Análisis de series temporales</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="example-box">
+                <p><strong>Ejemplo Solar:</strong> Regiones como la Comunidad Valenciana en España, con irradiaciones que pueden alcanzar los 5.1 kWh/m²/día, son muy favorables para la energía solar.</p>
+            </div>
+        </div>
+
+        <!-- Slide 7: Indicadores Técnicos Esenciales -->
+        <div class="slide">
+            <h2>Indicadores Técnicos Esenciales</h2>
+
+            <h3>1. Eficiencia Energética (EE)</h3>
+            <div class="formula">
+                EE = (Energía de Salida Útil / Energía de Entrada Total) × 100
+            </div>
+            <div class="example-box">
+                <p><strong>Ejemplo:</strong> Un panel solar recibe 1000W de potencia lumínica y produce 200W eléctricos: EE = (200W/1000W) × 100 = 20%</p>
+            </div>
+
+            <h3>2. Factor de Capacidad (FC)</h3>
+            <div class="formula">
+                FC = (Energía Generada Real / (Potencia Nominal × Horas del Período)) × 100
+            </div>
+            <div class="example-box">
+                <p><strong>Ejemplo:</strong> Parque eólico de 20MW que genera 61,320,000 kWh/año: FC = (61,320,000 / 175,200,000) × 100 = 35%</p>
+            </div>
+
+            <h3>3. Disponibilidad</h3>
+            <p>Porcentaje de tiempo durante el cual una planta está operativa y lista para producir energía.</p>
+
+            <h3>4. Fiabilidad</h3>
+            <p>Capacidad de funcionar sin fallos durante un período específico. Se mide por indicadores como el Tiempo Medio Entre Fallos (MTBF).</p>
+
+            <h3>5. Viabilidad de Interconexión</h3>
+            <p>Estudios técnicos para asegurar conexión segura y eficiente a la red eléctrica existente.</p>
+        </div>
+
+        <!-- Slide 8: Análisis Económico-Financiero -->
+        <div class="slide">
+            <h2>Análisis Económico-Financiero</h2>
+
+            <h3>Definición y Objetivos</h3>
+            <p>Proceso mediante el cual se evalúa la <span class="highlight">viabilidad económica y rentabilidad</span> de un proyecto energético a lo largo de toda su vida útil.</p>
+
+            <h3>Estructura de Costos</h3>
+            <div class="two-column">
+                <div>
+                    <h4>💰 CAPEX (Capital Expenditures)</h4>
+                    <p>Gastos de capital para adquirir activos fijos:</p>
+                    <ul>
+                        <li>Compra/arrendamiento de terrenos</li>
+                        <li>Equipos principales</li>
+                        <li>Obras civiles</li>
+                        <li>Instalación y montaje</li>
+                        <li>Ingeniería y supervisión</li>
+                        <li>Permisos y licencias</li>
+                        <li>Interconexión a red</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>🔧 OPEX (Operational Expenditures)</h4>
+                    <p>Gastos recurrentes de operación:</p>
+                    <ul>
+                        <li>Salarios de O&M</li>
+                        <li>Repuestos y consumibles</li>
+                        <li>Seguros</li>
+                        <li>Alquiler de terrenos</li>
+                        <li>Combustible (si aplica)</li>
+                        <li>Monitoreo y gestión</li>
+                        <li>Impuestos y tasas</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <p><strong>Diferencia Clave:</strong> Las renovables (solar, eólica) tienen alto CAPEX pero bajo OPEX. Las plantas fósiles pueden tener menor CAPEX inicial pero OPEX muy alto y variable por el combustible.</p>
+            </div>
+        </div>
+
+        <!-- Slide 9: Indicadores de Rentabilidad -->
+        <div class="slide">
+            <h2>Indicadores Clave de Rentabilidad</h2>
+
+            <h3>1. Período de Recuperación (Payback)</h3>
+            <div class="formula">
+                Payback = Inversión Inicial (CAPEX) / Flujo de Caja Neto Anual
+            </div>
+
+            <h3>2. Valor Actual Neto (VAN)</h3>
+            <div class="formula">
+                VAN = -I₀ + Σ(FCₙ/(1+k)ⁿ)
+            </div>
+            <ul>
+                <li><strong>VAN > 0:</strong> Proyecto financieramente atractivo</li>
+                <li><strong>VAN < 0:</strong> Proyecto no rentable</li>
+                <li><strong>VAN = 0:</strong> Proyecto indiferente</li>
+            </ul>
+
+            <h3>3. Tasa Interna de Retorno (TIR)</h3>
+            <p>Tasa de descuento que hace que el VAN sea igual a cero. Representa la rentabilidad intrínseca del proyecto.</p>
+            <ul>
+                <li><strong>TIR > k:</strong> Proyecto aceptable</li>
+                <li><strong>TIR < k:</strong> Proyecto se rechaza</li>
+            </ul>
+
+            <h3>4. Costo Nivelado de Energía (LCOE)</h3>
+            <div class="formula">
+                LCOE = (Suma de Costos Descontados) / (Suma de Energía Generada Descontada)
+            </div>
+            <p>Precio mínimo promedio al que se debe vender la energía para cubrir todos los costos y alcanzar el punto de equilibrio.</p>
+        </div>
+
+        <!-- Slide 10: Comparación LCOE por Tecnología -->
+        <div class="slide">
+            <h2>Comparación de LCOE por Tecnología</h2>
+            <div class="chart-container">
+                <canvas id="lcoeChart"></canvas>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tecnología</th>
+                        <th>CAPEX ($/kW)</th>
+                        <th>Factor Capacidad (%)</th>
+                        <th>LCOE Estimado ($/kWh)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Solar FV (Utility-Scale)</td>
+                        <td>700 - 1000</td>
+                        <td>15 - 25</td>
+                        <td>0.03 - 0.05</td>
+                    </tr>
+                    <tr>
+                        <td>Eólica Terrestre</td>
+                        <td>1000 - 1700</td>
+                        <td>30 - 50</td>
+                        <td>0.03 - 0.06</td>
+                    </tr>
+                    <tr>
+                        <td>Ciclo Combinado Gas</td>
+                        <td>800 - 1200</td>
+                        <td>> 60</td>
+                        <td>0.05 - 0.08+</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <p><strong>Nota:</strong> El LCOE de solar y eólica ha mostrado una tendencia decreciente significativa en la última década, mientras que el de gas natural es muy sensible al precio del combustible.</p>
+            </div>
+        </div>
+
+        <!-- Slide 11: Análisis Ambiental -->
+        <div class="slide">
+            <h2>Análisis Ambiental</h2>
+
+            <h3>Definición y Objetivos</h3>
+            <p>Proceso sistemático y multidisciplinario para identificar, predecir, evaluar y mitigar los posibles impactos de un proyecto energético sobre:</p>
+            <ul>
+                <li><strong>Medio físico:</strong> aire, agua, suelo, clima</li>
+                <li><strong>Medio biológico:</strong> flora, fauna, ecosistemas, biodiversidad</li>
+                <li><strong>Medio socioeconómico:</strong> salud humana, empleo, uso de la tierra, patrimonio cultural</li>
+            </ul>
+
+            <h3>La Evaluación de Impacto Ambiental (EIA)</h3>
+            <p>Instrumento preventivo que analiza las consecuencias ambientales significativas antes de tomar la decisión de ejecutar un proyecto.</p>
+
+            <h3>Fases Principales de la EIA</h3>
+            <ol>
+                <li><strong>Selección (Screening):</strong> Determinar si requiere EIA completa</li>
+                <li><strong>Definición del Alcance (Scoping):</strong> Identificar impactos más significativos</li>
+                <li><strong>Línea Base Ambiental:</strong> Descripción del estado actual del medio ambiente</li>
+                <li><strong>Identificación y Evaluación de Impactos:</strong> Predicción de características de impactos</li>
+                <li><strong>Medidas de Mitigación:</strong> Prevención, mitigación y compensación</li>
+                <li><strong>Consulta Pública:</strong> Participación ciudadana y transparencia</li>
+                <li><strong>Decisión de Autoridad:</strong> Aprobación, modificación o rechazo</li>
+                <li><strong>Seguimiento y Monitoreo:</strong> Verificación de medidas durante operación</li>
+            </ol>
+        </div>
+
+        <!-- Slide 12: Análisis de Ciclo de Vida (ACV) -->
+        <div class="slide">
+            <h2>Análisis de Ciclo de Vida (ACV)</h2>
+
+            <h3>Concepto "De la Cuna a la Tumba"</h3>
+            <p>Metodología que evalúa los impactos ambientales a lo largo de todas las etapas de existencia de un producto o servicio:</p>
+            <ul>
+                <li>Extracción y procesamiento de materias primas</li>
+                <li>Producción y fabricación</li>
+                <li>Transporte y distribución</li>
+                <li>Uso y operación</li>
+                <li>Gestión al final de vida útil</li>
+            </ul>
+
+            <h3>Fases del ACV (ISO 14040/14044)</h3>
+            <div class="two-column">
+                <div>
+                    <h4>1. Objetivo y Alcance</h4>
+                    <p>Definición del propósito, unidad funcional y límites del sistema</p>
+
+                    <h4>2. Inventario (ICV)</h4>
+                    <p>Recopilación de datos: entradas (materias primas, energía) y salidas (productos, emisiones, residuos)</p>
+                </div>
+                <div>
+                    <h4>3. Evaluación de Impacto (EICV)</h4>
+                    <p>Traducción de datos a impactos: calentamiento global, acidificación, eutrofización, toxicidad</p>
+
+                    <h4>4. Interpretación</h4>
+                    <p>Análisis de resultados, identificación de puntos críticos, conclusiones y recomendaciones</p>
+                </div>
+            </div>
+
+            <h3>Huella de Carbono</h3>
+            <div class="example-box">
+                <p><strong>Definición:</strong> Cantidad total de gases de efecto invernadero emitidos directa o indirectamente, expresada en CO₂ equivalente. Es un indicador clave del ACV para medir la contribución al cambio climático.</p>
+            </div>
+        </div>
+
+        <!-- Slide 13: Impactos Ambientales por Tecnología -->
+        <div class="slide">
+            <h2>Principales Impactos Ambientales por Tecnología</h2>
+
+            <h3>🌞 Energía Solar Fotovoltaica</h3>
+            <ul>
+                <li><strong>Uso del suelo:</strong> Grandes plantas pueden ocupar extensiones significativas</li>
+                <li><strong>Fabricación:</strong> Consumo de energía y materiales en producción de paneles</li>
+                <li><strong>Uso de agua:</strong> Para limpieza en climas polvorientos</li>
+                <li><strong>Residuos:</strong> Gestión al final de vida útil</li>
+            </ul>
+
+            <h3>💨 Energía Eólica</h3>
+            <ul>
+                <li><strong>Fauna:</strong> Riesgo de colisión de aves y murciélagos</li>
+                <li><strong>Ruido:</strong> Mecánico y aerodinámico</li>
+                <li><strong>Impacto visual:</strong> Alteración del paisaje</li>
+                <li><strong>Efecto sombra:</strong> Sombras intermitentes</li>
+            </ul>
+
+            <h3>💧 Energía Hidroeléctrica</h3>
+            <ul>
+                <li><strong>Regímenes fluviales:</strong> Alteración de caudales y calidad del agua</li>
+                <li><strong>Inundación:</strong> Pérdida de hábitat terrestre por embalse</li>
+                <li><strong>Migración:</strong> Barrera para peces y organismos acuáticos</li>
+                <li><strong>Emisiones:</strong> Metano por descomposición de materia orgánica</li>
+                <li><strong>Sedimentación:</strong> Acumulación en embalse, reducción aguas abajo</li>
+            </ul>
+
+            <h3>🌱 Biomasa</h3>
+            <ul>
+                <li><strong>Emisiones:</strong> Contaminantes si combustión ineficiente</li>
+                <li><strong>Uso de suelo y agua:</strong> Para cultivos energéticos</li>
+                <li><strong>Biodiversidad:</strong> Conversión de hábitats a monocultivos</li>
+            </ul>
+        </div>
+
+        <!-- Slide 14: Jerarquía de Mitigación Ambiental -->
+        <div class="slide">
+            <h2>Jerarquía de Mitigación Ambiental</h2>
+            <p>Las medidas de gestión ambiental siguen una jerarquía de preferencia:</p>
+
+            <div style="margin: 30px 0;">
+                <h3 style="color: #4caf50;">1. 🚫 EVITAR</h3>
+                <p>La mejor estrategia es evitar completamente el impacto mediante reubicación del proyecto o modificación del diseño.</p>
+                <div class="example-box">
+                    <p><strong>Ejemplo:</strong> Ubicar plantas solares en terrenos degradados en lugar de hábitats sensibles.</p>
+                </div>
+
+                <h3 style="color: #ff9800;">2. ⬇️ MINIMIZAR</h3>
+                <p>Reducir la magnitud, extensión, duración o intensidad del impacto a niveles aceptables.</p>
+                <div class="example-box">
+                    <p><strong>Ejemplo:</strong> Sistemas de detección y disuasión de aves en parques eólicos.</p>
+                </div>
+
+                <h3 style="color: #2196f3;">3. 🔄 RESTAURAR</h3>
+                <p>Implementar acciones para restaurar las condiciones originales o rehabilitar el área afectada.</p>
+                <div class="example-box">
+                    <p><strong>Ejemplo:</strong> Revegetación con especies nativas entre hileras de paneles solares.</p>
+                </div>
+
+                <h3 style="color: #9c27b0;">4. ⚖️ COMPENSAR</h3>
+                <p>Contrarrestar impactos residuales mediante creación, restauración o mejora de hábitats similares en otro lugar.</p>
+                <div class="example-box">
+                    <p><strong>Ejemplo:</strong> Creación de áreas protegidas como compensación por pérdida de hábitat en hidroeléctricas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 15: La Visión Integral y Trade-offs -->
+        <div class="slide">
+            <h2>La Visión Integral: Conectando los Tres Análisis</h2>
+
+            <h3>La Interdependencia Inevitable</h3>
+            <p>Los análisis técnico, económico y ambiental están <span class="highlight">profundamente interconectados</span>. Las decisiones en un área tienen repercusiones directas en las otras.</p>
+
+            <h3>Ejemplos de Trade-offs</h3>
+            <div class="two-column">
+                <div>
+                    <h4>Tecnología más Eficiente</h4>
+                    <ul>
+                        <li>✅ Mayor producción energética</li>
+                        <li>✅ Menor uso de suelo</li>
+                        <li>❌ Mayor CAPEX inicial</li>
+                    </ul>
+
+                    <h4>Sitio con Excelente Recurso</h4>
+                    <ul>
+                        <li>✅ Mejor rendimiento técnico</li>
+                        <li>❌ Posible área ecológicamente sensible</li>
+                        <li>❌ Mayores costos de interconexión</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Medidas de Mitigación Robustas</h4>
+                    <ul>
+                        <li>✅ Menor impacto ambiental</li>
+                        <li>✅ Mayor aceptación social</li>
+                        <li>❌ Incremento significativo de CAPEX</li>
+                    </ul>
+
+                    <h4>Presupuesto Limitado</h4>
+                    <ul>
+                        <li>❌ Tecnología menos eficiente</li>
+                        <li>❌ Menor mitigación ambiental</li>
+                        <li>✅ Proyecto viable económicamente</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <p><strong>Optimización Multicriterio:</strong> La "mejor" solución no es aquella perfecta en una dimensión, sino la que encuentra un balance aceptable y sostenible entre todas ellas. El contexto político, regulatorio y social influye significativamente en cómo se resuelven estos trade-offs.</p>
+            </div>
+        </div>
+
+        <!-- Slide 16: Conclusiones -->
+        <div class="slide">
+            <h2>Conclusiones</h2>
+
+            <h3>Recapitulación de la Importancia del Análisis Integral</h3>
+            <p>Un proyecto energético verdaderamente exitoso y sostenible requiere una <span class="highlight">visión holística</span> que considere la factibilidad ingenieril, la rentabilidad financiera y la responsabilidad ambiental como pilares interconectados.</p>
+
+            <div class="warning-box">
+                <p><strong>Riesgo de Enfoques Parciales:</strong> Ignorar cualquiera de estos análisis puede conducir a proyectos que fracasan técnicamente, resultan cargas económicas insostenibles, o causan daños ambientales significativos e irreparables.</p>
+            </div>
+
+            <h3>El Rol de los Futuros Profesionales</h3>
+            <p>Como futuros profesionales del sector energético, ustedes tienen un papel crucial en:</p>
+            <ul>
+                <li>Comprender las múltiples dimensiones de los proyectos energéticos</li>
+                <li>Identificar y evaluar los trade-offs inherentes</li>
+                <li>Diseñar e implementar proyectos innovadores, eficientes y sostenibles</li>
+                <li>Contribuir a la transición hacia un sistema energético más sostenible</li>
+            </ul>
+
+            <h3>Invitación a Seguir Aprendiendo</h3>
+            <p>Este documento es una <span class="highlight">puerta de entrada</span> a un campo vasto y en constante evolución. Les invitamos a:</p>
+            <ul>
+                <li>Profundizar en las áreas que más les interesen</li>
+                <li>Mantenerse actualizados sobre avances tecnológicos</li>
+                <li>Seguir los nuevos modelos de negocio y regulaciones</li>
+                <li>Contribuir a un futuro energético mejor</li>
+            </ul>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <p style="font-size: 1.3em; color: #4fc3f7;"><strong>El desafío es grande, pero las oportunidades para contribuir son inmensas.</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" onclick="changeSlide(-1)">← Anterior</button>
+        <button class="nav-btn" onclick="changeSlide(1)">Siguiente →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            
+            // Update counter and progress bar
+            document.getElementById('slideCounter').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            document.getElementById('progressBar').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            
+            // Load chart if on LCOE slide
+            if (currentSlide === 9) {
+                setTimeout(loadLCOEChart, 100);
+            }
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                changeSlide(1);
+            }
+        });
+
+        function loadLCOEChart() {
+            const ctx = document.getElementById('lcoeChart');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Solar FV', 'Eólica Terrestre', 'Ciclo Combinado Gas'],
+                    datasets: [{
+                        label: 'LCOE Mínimo ($/kWh)',
+                        data: [0.03, 0.03, 0.05],
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 2
+                    }, {
+                        label: 'LCOE Máximo ($/kWh)',
+                        data: [0.05, 0.06, 0.08],
+                        backgroundColor: 'rgba(244, 67, 54, 0.8)',
+                        borderColor: 'rgba(244, 67, 54, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Comparación de LCOE por Tecnología',
+                            color: 'white',
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'LCOE ($/kWh)',
+                                color: 'white'
+                            },
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.2)' }
+                        },
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.2)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

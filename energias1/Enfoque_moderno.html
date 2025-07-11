@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Sistémico para Proyectos Energéticos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: none;
+            padding: 60px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide h1 {
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(45deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .slide h2 {
+            font-size: 2.8em;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .slide h3 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            color: #00ff88;
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .slide p, .slide li {
+            font-size: 1.4em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .slide ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .slide li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 12px;
+        }
+
+        .slide li::before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .content-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 212, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+
+        .diagram-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            margin: 15px 0;
+            border-left: 4px solid #00ff88;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.2));
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 20px 0;
+        }
+
+        .three-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            width: 100%;
+        }
+
+        .column-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .example-box {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+            margin: 15px 0;
+        }
+
+        .definition-box {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #00d4ff;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="slide-counter" id="slideCounter">1 / 20</div>
+
+        <!-- Slide 1: Título -->
+        <div class="slide active">
+            <h1>Análisis Sistémico para Proyectos Energéticos</h1>
+            <h2>Conceptos y Aplicaciones para Principiantes</h2>
+            <div class="highlight-box">
+                <p style="text-align: center; font-size: 1.6em;">
+                    Una guía introductoria al pensamiento sistémico y la dinámica de sistemas aplicada al sector energético
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 2: ¿Qué es el Pensamiento Sistémico? -->
+        <div class="slide">
+            <h2>¿Qué es el Pensamiento Sistémico?</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Definición</h3>
+                    <p>El pensamiento sistémico es una filosofía y conjunto de herramientas para comprender la complejidad, enfocándose en:</p>
+                    <ul>
+                        <li>El sistema como un todo</li>
+                        <li>Las interrelaciones dinámicas entre partes</li>
+                        <li>Los comportamientos emergentes</li>
+                        <li>La evolución temporal del sistema</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Contraste con Pensamiento Analítico</h3>
+                    <div class="definition-box">
+                        <p><strong>Analítico:</strong> Descompone problemas en partes pequeñas para estudiarlas aisladamente</p>
+                    </div>
+                    <div class="definition-box">
+                        <p><strong>Sistémico:</strong> Observa cómo las partes interactúan y se influencian mutuamente</p>
+                    </div>
+                </div>
+            </div>
+            <div class="formula">
+                Sistema = "Conjunto de elementos interrelacionados con un objetivo común"
+            </div>
+        </div>
+
+        <!-- Slide 3: Dinámica de Sistemas -->
+        <div class="slide">
+            <h2>Dinámica de Sistemas</h2>
+            <div class="highlight-box">
+                <h3>Metodología Rigurosa</h3>
+                <p>La Dinámica de Sistemas es una metodología basada en principios del pensamiento sistémico para:</p>
+            </div>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>Modelar</h3>
+                    <p>Crear representaciones estructuradas de sistemas complejos</p>
+                </div>
+                <div class="column-box">
+                    <h3>Simular</h3>
+                    <p>Ejecutar modelos para observar comportamientos a lo largo del tiempo</p>
+                </div>
+                <div class="column-box">
+                    <h3>Analizar</h3>
+                    <p>Identificar fuerzas subyacentes y bucles de retroalimentación</p>
+                </div>
+            </div>
+            <div class="example-box">
+                <p><strong>Enfoque Temporal:</strong> No solo describe el estado actual, sino cómo evoluciona el sistema y las consecuencias futuras de decisiones presentes</p>
+            </div>
+        </div>
+
+        <!-- Slide 4: Importancia en el Sector Energético -->
+        <div class="slide">
+            <h2>Importancia del Enfoque Sistémico en Energía</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Complejidad de Sistemas Energéticos</h3>
+                    <ul>
+                        <li>Generación de múltiples fuentes</li>
+                        <li>Transmisión y distribución</li>
+                        <li>Almacenamiento de energía</li>
+                        <li>Múltiples actores e intereses</li>
+                        <li>Integración de renovables intermitentes</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Desafíos de la Transición Energética</h3>
+                    <ul>
+                        <li>Flujos bidireccionales en redes</li>
+                        <li>Variabilidad de generación</li>
+                        <li>Gestión de demanda sofisticada</li>
+                        <li>Seguridad y resiliencia del sistema</li>
+                        <li>Efectos en cascada</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p style="text-align: center;"><strong>"Comprender cómo funciona un sistema energético no es solo útil, es esencial"</strong></p>
+            </div>
+        </div>
+
+        <!-- Slide 5: Beneficios del Análisis Sistémico -->
+        <div class="slide">
+            <h2>Beneficios del Análisis Sistémico</h2>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>Mejor Toma de Decisiones</h3>
+                    <p>Facilita decisiones informadas considerando interrelaciones complejas</p>
+                </div>
+                <div class="column-box">
+                    <h3>Comprensión de Impactos</h3>
+                    <p>Permite entender efectos a largo plazo de las intervenciones</p>
+                </div>
+                <div class="column-box">
+                    <h3>Identificación de Consecuencias</h3>
+                    <p>Ayuda a prever efectos secundarios no deseados</p>
+                </div>
+            </div>
+            <div class="example-box">
+                <h3>Distinción Clave: Producto vs Resultado</h3>
+                <p><strong>Producto:</strong> Una planta de energía o nueva tecnología</p>
+                <p><strong>Resultado:</strong> El impacto que tiene una vez en funcionamiento en su contexto más amplio</p>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Puntos de Apalancamiento:</strong> Lugares donde una intervención pequeña puede producir cambios significativos en el comportamiento del sistema</p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Elementos de un Sistema -->
+        <div class="slide">
+            <h2>Elementos Fundamentales de un Sistema</h2>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>Fronteras</h3>
+                    <p>Delimitan qué está dentro (endógeno) y fuera (exógeno) del sistema</p>
+                    <div class="definition-box">
+                        <p>La demarcación es subjetiva y depende del propósito del modelo</p>
+                    </div>
+                </div>
+                <div class="column-box">
+                    <h3>Componentes</h3>
+                    <p>Partes, variables o subsistemas dentro de la frontera relevantes para el estudio</p>
+                    <div class="definition-box">
+                        <p>Elementos situados en el interior de los límites del sistema</p>
+                    </div>
+                </div>
+                <div class="column-box">
+                    <h3>Interrelaciones</h3>
+                    <p>Conexiones, influencias y flujos entre componentes</p>
+                    <div class="definition-box">
+                        <p>Definen la estructura y comportamiento del sistema</p>
+                    </div>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p style="text-align: center;"><strong>"Una característica crucial de un sistema es la interrelación de sus elementos"</strong></p>
+            </div>
+        </div>
+
+        <!-- Slide 7: Variables y Parámetros -->
+        <div class="slide">
+            <h2>Variables y Parámetros en Modelos</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Variables</h3>
+                    <p>Cantidades que cambian su valor a lo largo del tiempo como resultado de la dinámica interna</p>
+                    <div class="example-box">
+                        <p><strong>Ejemplos en Energía:</strong></p>
+                        <ul>
+                            <li>Precio de electricidad</li>
+                            <li>Capacidad renovable instalada</li>
+                            <li>Nivel de emisiones GEI</li>
+                            <li>Demanda horaria de energía</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="content-box">
+                    <h3>Parámetros</h3>
+                    <p>Cantidades constantes o entradas externas que no varían dinámicamente durante una simulación</p>
+                    <div class="example-box">
+                        <p><strong>Ejemplos en Energía:</strong></p>
+                        <ul>
+                            <li>Tasa de interés para inversiones</li>
+                            <li>Eficiencia de conversión</li>
+                            <li>Nivel de subsidios</li>
+                            <li>Vida útil técnica de plantas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Análisis de Sensibilidad:</strong> Variar sistemáticamente parámetros para observar su influencia en el comportamiento del sistema</p>
+            </div>
+        </div>
+
+        <!-- Slide 8: Proceso de Modelado -->
+        <div class="slide">
+            <h2>Proceso de Modelado: De la Conceptualización a la Simulación</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Etapas Iniciales</h3>
+                    <ul>
+                        <li>Definición del problema y objetivos</li>
+                        <li>Formulación de hipótesis dinámicas</li>
+                        <li>Identificación de variables clave</li>
+                        <li>Creación de diagramas causales</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Etapas de Implementación</h3>
+                    <ul>
+                        <li>Formulación del modelo de simulación</li>
+                        <li>Estimación de parámetros</li>
+                        <li>Simulación y análisis de resultados</li>
+                        <li>Validación y refinamiento</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Proceso Iterativo:</strong> El modelado es un proceso de aprendizaje continuo, no lineal</p>
+            </div>
+            <div class="example-box">
+                <p><strong>Propósito de los Modelos:</strong> Son herramientas para la toma de decisiones y comprensión, no bolas de cristal para predecir el futuro con certeza absoluta</p>
+            </div>
+        </div>
+
+        <!-- Slide 9: Diagramas de Bucles Causales (CLDs) -->
+        <div class="slide">
+            <h2>Diagramas de Bucles Causales (CLDs)</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>¿Qué son los CLDs?</h3>
+                    <p>Herramientas visuales para representar relaciones de causa y efecto y bucles de retroalimentación</p>
+                    <div class="definition-box">
+                        <p>Facilitan la conceptualización inicial y comunicación de la estructura del sistema</p>
+                    </div>
+                </div>
+                <div class="content-box">
+                    <h3>Función Principal</h3>
+                    <p>Servir como "mapas mentales compartidos" para grupos con diferentes perspectivas</p>
+                    <div class="definition-box">
+                        <p>Representan "la historia" del sistema de manera visual y comprensible</p>
+                    </div>
+                </div>
+            </div>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>Variables</h3>
+                    <p>Elementos clave cuyo comportamiento se analiza</p>
+                </div>
+                <div class="column-box">
+                    <h3>Enlaces (Flechas)</h3>
+                    <p>Relaciones causales entre variables</p>
+                </div>
+                <div class="column-box">
+                    <h3>Polaridad (+/-)</h3>
+                    <p>Naturaleza de la influencia entre variables</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Polaridad en CLDs -->
+        <div class="slide">
+            <h2>Polaridad de Enlaces en CLDs</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Polaridad Positiva (+)</h3>
+                    <p>Un cambio en la variable origen produce un cambio en el mismo sentido en la variable destino</p>
+                    <div class="example-box">
+                        <p><strong>Ejemplo:</strong> Natalidad (+) → Población</p>
+                        <p>↑ Natalidad → ↑ Población</p>
+                        <p>↓ Natalidad → ↓ Población</p>
+                    </div>
+                </div>
+                <div class="content-box">
+                    <h3>Polaridad Negativa (-)</h3>
+                    <p>Un cambio en la variable origen produce un cambio en sentido opuesto en la variable destino</p>
+                    <div class="example-box">
+                        <p><strong>Ejemplo:</strong> Mortalidad (-) → Población</p>
+                        <p>↑ Mortalidad → ↓ Población</p>
+                        <p>↓ Mortalidad → ↑ Población</p>
+                    </div>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Principio Ceteris Paribus:</strong> Se considera el efecto directo y aislado, asumiendo que todas las demás influencias permanecen constantes</p>
+            </div>
+        </div>
+
+        <!-- Slide 11: Bucles de Retroalimentación -->
+        <div class="slide">
+            <h2>Bucles de Retroalimentación</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Bucles de Refuerzo (R) - Positivos</h3>
+                    <p>Amplifican el cambio inicial en cualquier dirección</p>
+                    <ul>
+                        <li>Crecimiento exponencial o colapso</li>
+                        <li>Número par de enlaces negativos</li>
+                        <li>"Círculos virtuosos" o "viciosos"</li>
+                    </ul>
+                    <div class="example-box">
+                        <p><strong>Ejemplo:</strong> Población → Nacimientos → Población</p>
+                    </div>
+                </div>
+                <div class="content-box">
+                    <h3>Bucles de Compensación (B) - Negativos</h3>
+                    <p>Buscan equilibrio, contrarrestando desviaciones</p>
+                    <ul>
+                        <li>Estabilidad y regulación</li>
+                        <li>Número impar de enlaces negativos</li>
+                        <li>Búsqueda de objetivos</li>
+                    </ul>
+                    <div class="example-box">
+                        <p><strong>Ejemplo:</strong> Termostato regulando temperatura</p>
+                    </div>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Retrasos Temporales:</strong> Pueden causar sobrecorrección u oscilaciones en bucles de compensación</p>
+            </div>
+        </div>
+
+        <!-- Slide 12: Ejemplo CLD - Adopción de Paneles Solares -->
+        <div class="slide">
+            <h2>Ejemplo CLD: Adopción de Paneles Solares</h2>
+            <div class="diagram-container">
+                <h3>Variables Clave</h3>
+                <p>Rentabilidad • Adopciones Anuales • Costo de Paneles • Conciencia Pública • Subsidios • Capacidad Total</p>
+            </div>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>R1: Boca a Boca</h3>
+                    <p>Adopciones → Visibilidad → Nuevas Adopciones</p>
+                </div>
+                <div class="column-box">
+                    <h3>R2: Economías de Escala</h3>
+                    <p>Adopciones → Demanda → Producción → ↓Costo → Rentabilidad → Adopciones</p>
+                </div>
+                <div class="column-box">
+                    <h3>B1: Saturación</h3>
+                    <p>Adopciones → Capacidad Total → Saturación/Problemas Red → ↓Adopciones</p>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Comportamiento del Sistema:</strong> Crecimiento inicial lento, aceleración por bucles de refuerzo, eventual desaceleración por límites</p>
+            </div>
+        </div>
+
+        <!-- Slide 13: Estructuras de Stock y Flujo -->
+        <div class="slide">
+            <h2>Diagramas de Acumulación y Flujo (SFDs)</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Evolución de CLDs</h3>
+                    <p>Los SFDs formalizan cuantitativamente los CLDs, permitiendo:</p>
+                    <ul>
+                        <li>Representación cuantitativa precisa</li>
+                        <li>Simulación del comportamiento temporal</li>
+                        <li>Análisis de políticas y escenarios</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Distinción Fundamental</h3>
+                    <p>Separación explícita entre:</p>
+                    <div class="definition-box">
+                        <p><strong>Stocks:</strong> Cantidades que se acumulan</p>
+                    </div>
+                    <div class="definition-box">
+                        <p><strong>Flujos:</strong> Tasas de cambio que modifican los stocks</p>
+                    </div>
+                </div>
+            </div>
+            <div class="formula">
+                Stock(t) = Stock(t₀) + ∫[Flujos Entrada - Flujos Salida]dt
+            </div>
+        </div>
+
+        <!-- Slide 14: Componentes de SFDs -->
+        <div class="slide">
+            <h2>Componentes Clave de SFDs</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Stocks/Niveles (□)</h3>
+                    <p>Cantidades que se acumulan - "memoria" del sistema</p>
+                    <div class="example-box">
+                        <p><strong>Ejemplos:</strong> Población, dinero en cuenta, capacidad instalada, CO₂ atmosférico</p>
+                    </div>
+                    <p>Cambian lentamente, solo por sus flujos asociados</p>
+                </div>
+                <div class="content-box">
+                    <h3>Flujos/Tasas (⟶⚬⟶)</h3>
+                    <p>Velocidad de cambio de los stocks</p>
+                    <div class="example-box">
+                        <p><strong>Ejemplos:</strong> Tasa natalidad/mortalidad, tasa inversión/depreciación, tasa carga/descarga</p>
+                    </div>
+                    <p>Definidos por ecuaciones matemáticas</p>
+                </div>
+            </div>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>Variables Auxiliares (○)</h3>
+                    <p>Cálculos intermedios, parámetros, entradas exógenas</p>
+                </div>
+                <div class="column-box">
+                    <h3>Conectores (→)</h3>
+                    <p>Flechas delgadas que llevan información, no material</p>
+                </div>
+                <div class="column-box">
+                    <h3>Ecuaciones</h3>
+                    <p>Definen cómo se calculan flujos y auxiliares</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 15: Analogía de la Bañera -->
+        <div class="slide">
+            <h2>La Analogía de la Bañera</h2>
+            <div class="diagram-container">
+                <h3>Comprensión Intuitiva de Stocks y Flujos</h3>
+            </div>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Componentes</h3>
+                    <ul>
+                        <li><strong>Stock:</strong> Nivel de agua en la bañera</li>
+                        <li><strong>Flujo Entrada:</strong> Agua del grifo (L/min)</li>
+                        <li><strong>Flujo Salida:</strong> Agua del desagüe (L/min)</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Dinámica</h3>
+                    <ul>
+                        <li>Entrada > Salida → Nivel sube</li>
+                        <li>Salida > Entrada → Nivel baja</li>
+                        <li>Entrada = Salida → Nivel constante</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>"Fallo de Stock y Flujo":</strong> Muchas personas tienen dificultades para comprender intuitivamente la dinámica de acumulación, incluso con formación STEM</p>
+            </div>
+            <div class="example-box">
+                <p><strong>Implicación:</strong> Necesidad de enseñanza explícita para mejorar decisiones en dominios como emisiones CO₂, recursos naturales, deuda pública</p>
+            </div>
+        </div>
+
+        <!-- Slide 16: Ejemplos SFD en Energía -->
+        <div class="slide">
+            <h2>Ejemplos de SFDs en Proyectos Energéticos</h2>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>Almacenamiento de Energía</h3>
+                    <p><strong>Stock:</strong> Energía Almacenada (MWh)</p>
+                    <p><strong>Entrada:</strong> Tasa de Carga (MW)</p>
+                    <p><strong>Salida:</strong> Tasa de Descarga (MW)</p>
+                    <p><strong>Auxiliares:</strong> Eficiencia, Estado de Carga, Precios</p>
+                </div>
+                <div class="column-box">
+                    <h3>Capacidad Renovable</h3>
+                    <p><strong>Stock:</strong> Capacidad Instalada (GW)</p>
+                    <p><strong>Entrada:</strong> Nueva Capacidad (GW/año)</p>
+                    <p><strong>Salida:</strong> Retiro Obsoleta (GW/año)</p>
+                    <p><strong>Auxiliares:</strong> Rentabilidad, Subsidios, Vida Útil</p>
+                </div>
+                <div class="column-box">
+                    <h3>Inversión en Infraestructura</h3>
+                    <p><strong>Stock:</strong> Capital Invertido (M€)</p>
+                    <p><strong>Entrada:</strong> Inversión Anual (M€/año)</p>
+                    <p><strong>Salida:</strong> Depreciación (M€/año)</p>
+                    <p><strong>Auxiliares:</strong> ROI, Costo Capital, Demanda</p>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Aplicación:</strong> Estos modelos permiten explorar velocidad de despliegue, necesidades de capacidad, flujos financieros para objetivos energéticos</p>
+            </div>
+        </div>
+
+        <!-- Slide 17: Pasos para Desarrollar SFDs -->
+        <div class="slide">
+            <h2>Guía Práctica: Desarrollar un SFD</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Pasos 1-4: Conceptualización</h3>
+                    <ul>
+                        <li>Definir alcance y objetivos</li>
+                        <li>Identificar stocks principales</li>
+                        <li>Determinar flujos que afectan stocks</li>
+                        <li>Identificar variables auxiliares</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Pasos 5-9: Implementación</h3>
+                    <ul>
+                        <li>Dibujar conectores de información</li>
+                        <li>Formular ecuaciones para flujos</li>
+                        <li>Asignar valores iniciales y parámetros</li>
+                        <li>Verificar consistencia de unidades</li>
+                        <li>Simular, probar y refinar</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Consistencia de Unidades:</strong> Crucial para evitar errores. Si stock en "personas" y flujo en "personas/año", tiempo de simulación debe ser "años"</p>
+            </div>
+            <div class="example-box">
+                <p><strong>Proceso Iterativo:</strong> Refinamiento continuo basado en análisis de resultados, pruebas de sensibilidad y validación</p>
+            </div>
+        </div>
+
+        <!-- Slide 18: Vinculando CLDs con SFDs -->
+        <div class="slide">
+            <h2>Vinculando Retroalimentación con Stocks y Flujos</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Traducción de Bucles de Refuerzo</h3>
+                    <p>Un aumento en stock → aumento en flujo de entrada neto → mayor aumento en stock</p>
+                    <div class="example-box">
+                        <p><strong>Población:</strong> Stock Población → Tasa Natalidad → Stock Población (crecimiento exponencial)</p>
+                    </div>
+                </div>
+                <div class="content-box">
+                    <h3>Traducción de Bucles de Compensación</h3>
+                    <p>Un aumento en stock → disminución en flujo entrada neto → contrarrestar aumento inicial</p>
+                    <div class="example-box">
+                        <p><strong>Inventario:</strong> Stock Alto → Discrepancia Baja → Tasa Pedidos Baja → Estabilización</p>
+                    </div>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Principio Fundamental:</strong> La retroalimentación que genera comportamiento dinámico siempre involucra al menos un stock - es la "memoria" del sistema</p>
+            </div>
+        </div>
+
+        <!-- Slide 19: Herramientas de Software -->
+        <div class="slide">
+            <h2>Herramientas de Software Gratuitas</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Vensim PLE</h3>
+                    <ul>
+                        <li><strong>Tipo:</strong> Desktop (Win/Mac)</li>
+                        <li><strong>Facilidad:</strong> Moderada</li>
+                        <li><strong>Características:</strong> Construcción visual, análisis de bucles, simulación robusta</li>
+                        <li><strong>Ideal para:</strong> Modelos complejos y análisis avanzado</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Insight Maker</h3>
+                    <ul>
+                        <li><strong>Tipo:</strong> Web</li>
+                        <li><strong>Facilidad:</strong> Alta</li>
+                        <li><strong>Características:</strong> Interfaz intuitiva, colaboración online, ejemplos</li>
+                        <li><strong>Ideal para:</strong> Principiantes y trabajo colaborativo</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="three-column">
+                <div class="column-box">
+                    <h3>SageModeler</h3>
+                    <p>Web, muy fácil, ideal para conceptos sin matemáticas complejas</p>
+                </div>
+                <div class="column-box">
+                    <h3>EdrawMax</h3>
+                    <p>Desktop/Web, excelente para diagramación CLD</p>
+                </div>
+                <div class="column-box">
+                    <h3>Criterios de Selección</h3>
+                    <p>Facilidad, funcionalidades, documentación, plataforma, costo</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 20: Conclusiones y Próximos Pasos -->
+        <div class="slide">
+            <h2>Potenciando Proyectos Energéticos con Análisis Sistémico</h2>
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Beneficios Recapitulados</h3>
+                    <ul>
+                        <li>Comprensión de complejidad e interdependencias</li>
+                        <li>Anticipación de efectos a largo plazo</li>
+                        <li>Descubrimiento de consecuencias no deseadas</li>
+                        <li>Localización de puntos de apalancamiento</li>
+                        <li>Optimización de recursos escasos</li>
+                    </ul>
+                </div>
+                <div class="content-box">
+                    <h3>Próximos Pasos para Estudiantes</h3>
+                    <ul>
+                        <li>Practicar con herramientas de software</li>
+                        <li>Explorar modelos de ejemplo</li>
+                        <li>Lecturas adicionales especializadas</li>
+                        <li>Aplicar a proyectos y estudios de caso</li>
+                        <li>Desarrollar habilidades transferibles</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p style="text-align: center;"><strong>El análisis sistémico es una competencia transferible valiosa para abordar la complejidad en múltiples dominios profesionales y cívicos</strong></p>
+            </div>
+            <div class="example-box">
+                <p><strong>Aplicaciones Amplias:</strong> Gestión ambiental, economía, planificación urbana, salud pública, negocios y más</p>
+            </div>
+        </div>
+
+        <!-- Navegación -->
+        <div class="navigation">
+            <button class="nav-btn" onclick="previousSlide()">◀ Anterior</button>
+            <button class="nav-btn" onclick="nextSlide()">Siguiente ▶</button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            
+            // Actualizar contador
+            document.getElementById('slideCounter').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            // Actualizar barra de progreso
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Navegación por teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            } else if (e.key === 'Home') {
+                showSlide(0);
+            } else if (e.key === 'End') {
+                showSlide(totalSlides - 1);
+            }
+        });
+
+        // Inicializar
+        showSlide(0);
+    </script>
+</body>
+</html> 

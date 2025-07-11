@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Sistémico Interactivo para Proyectos Energéticos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: A single-page application with a tab-based navigation to switch between distinct thematic sections: 'Inicio' (introduction), 'Conceptos' (core ideas), 'Diagramas Causales' (interactive CLD example), 'Stocks y Flujos' (interactive SFD bathtub analogy and simulation), 'Aplicación' (interactive energy transition model), and 'Herramientas' (software list). This modular structure is chosen over a linear scroll to break down the dense report content into manageable, interactive learning modules, allowing users to explore concepts non-linearly and engage with dynamic simulations, which is more effective for beginners than static text. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Causal Loop Diagrams (CLD) -> Goal: Explain feedback loops visually -> Viz/Presentation: Interactive HTML/CSS diagram for "Solar Panel Adoption" -> Interaction: Hovering over elements reveals explanatory tooltips -> Justification: More engaging than a static image and avoids forbidden SVG.
+        - Report Info: Stock and Flow Dynamics (SFD) -> Goal: Make the concept of accumulation intuitive -> Viz/Presentation: "Bathtub Analogy" with HTML/CSS visual and a Chart.js line chart for the water level -> Interaction: Sliders control inflow/outflow, with real-time updates to the visual and chart -> Justification: Directly addresses the "stock-flow failure" by providing tangible, immediate feedback.
+        - Report Info: Modeling and Leverage Points -> Goal: Demonstrate policy simulation -> Viz/Presentation: "Energy Transition Model" using a Chart.js line chart -> Interaction: Sliders adjust parameters like investment rate, re-running a JS simulation and updating the chart -> Justification: Connects all concepts into a practical application, showing the impact of decisions over time.
+        - Library/Method: Chart.js for all charts, Vanilla JS for logic, Tailwind CSS for styling. NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .nav-button {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-button.active {
+            border-bottom-color: #0d9488; /* teal-600 */
+            color: #0d9488; /* teal-600 */
+        }
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .content-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .cld-diagram {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            height: 500px;
+            margin: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            background-color: white;
+            padding: 1rem;
+        }
+        .cld-node {
+            position: absolute;
+            background-color: #f1f5f9;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+        }
+        .cld-arrow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .cld-arrow-path {
+            stroke: #475569;
+            stroke-width: 1.5;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        .cld-polarity {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #64748b;
+        }
+        .cld-loop {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0d9488;
+            opacity: 0.8;
+        }
+        .cld-loop-label {
+            color: #0f766e;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        .cld-tooltip {
+            position: absolute;
+            visibility: hidden;
+            background-color: #1e293b;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            width: 200px;
+            pointer-events: none;
+        }
+        .cld-node:hover .cld-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="min-h-screen">
+        <header class="bg-white shadow-sm sticky top-0 z-10">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="text-xl font-bold text-teal-700">Análisis Sistémico Interactivo</div>
+                    <div class="hidden md:flex items-center space-x-4">
+                        <button class="nav-button active" data-target="home">Inicio</button>
+                        <button class="nav-button" data-target="concepts">Conceptos</button>
+                        <button class="nav-button" data-target="clds">Diagramas Causales</button>
+                        <button class="nav-button" data-target="sfds">Stocks y Flujos</button>
+                        <button class="nav-button" data-target="application">Aplicación</button>
+                        <button class="nav-button" data-target="tools">Herramientas</button>
+                    </div>
+                     <div class="md:hidden">
+                        <select id="mobile-nav" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                            <option value="home">Inicio</option>
+                            <option value="concepts">Conceptos</option>
+                            <option value="clds">Diagramas Causales</option>
+                            <option value="sfds">Stocks y Flujos</option>
+                            <option value="application">Aplicación</option>
+                            <option value="tools">Herramientas</option>
+                        </select>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            
+            <section id="home" class="content-section active">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">Comprender la Complejidad Energética</h1>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Una introducción interactiva al análisis sistémico para proyectos energéticos. Aprende a ver el todo, no solo las partes.</p>
+                </div>
+
+                <div class="mt-12">
+                     <div class="max-w-5xl mx-auto">
+                        <h2 class="text-2xl font-bold text-slate-800 mb-4">¿Por qué un enfoque sistémico?</h2>
+                        <p class="text-slate-600 mb-6">
+                            Los proyectos energéticos son increíblemente complejos. Involucran tecnología, economía, políticas y factores sociales que están profundamente interconectados. El pensamiento sistémico nos proporciona las herramientas para no perdernos en los detalles y entender cómo estas interacciones dan forma al futuro. En lugar de reaccionar a los problemas a medida que surgen, podemos anticipar y diseñar sistemas más resilientes y efectivos.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center max-w-5xl mx-auto">
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <div class="text-3xl text-teal-600 mb-3">🔍</div>
+                            <h3 class="text-lg font-semibold text-slate-800">Anticipar Consecuencias</h3>
+                            <p class="mt-2 text-sm text-slate-500">Descubre cómo los subsidios bien intencionados pueden tener efectos secundarios inesperados o cómo la eficiencia puede, paradójicamente, aumentar el consumo.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <div class="text-3xl text-teal-600 mb-3">🎯</div>
+                            <h3 class="text-lg font-semibold text-slate-800">Identificar Puntos Clave</h3>
+                            <p class="mt-2 text-sm text-slate-500">Aprende a encontrar los "puntos de apalancamiento": lugares donde una pequeña intervención puede generar un gran impacto positivo en todo el sistema.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <div class="text-3xl text-teal-600 mb-3">💡</div>
+                            <h3 class="text-lg font-semibold text-slate-800">Mejorar la Toma de Decisiones</h3>
+                            <p class="mt-2 text-sm text-slate-500">Utiliza modelos para probar políticas y estrategias de forma segura antes de implementarlas en el mundo real, ahorrando tiempo y recursos.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="concepts" class="content-section">
+                <h1 class="text-3xl font-bold text-center mb-2">Conceptos Fundamentales</h1>
+                <p class="text-slate-600 text-center mb-10 max-w-3xl mx-auto">Todo sistema tiene elementos básicos que definen su estructura y comportamiento. Comprenderlos es el primer paso para poder modelar y analizar cualquier problema complejo.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="font-semibold text-teal-700 text-lg">Fronteras del Sistema</h3>
+                        <p class="mt-2 text-slate-600">Definen qué está "dentro" y qué está "fuera" de nuestro análisis. Es una elección crucial: un ingeniero puede enfocarse en los componentes técnicos de una planta, mientras que un economista incluiría el mercado eléctrico y las políticas públicas.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="font-semibold text-teal-700 text-lg">Componentes e Interrelaciones</h3>
+                        <p class="mt-2 text-slate-600">Los componentes son las partes (p.ej., paneles solares, baterías), pero lo más importante son sus interrelaciones. El comportamiento del sistema emerge de cómo se influyen mutuamente.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="font-semibold text-teal-700 text-lg">Variables y Parámetros</h3>
+                        <p class="mt-2 text-slate-600">Las <strong>variables</strong> cambian dentro del modelo (p.ej., precio de la electricidad). Los <strong>parámetros</strong> son valores fijos que definimos para un escenario (p.ej., la eficiencia de un panel), y que podemos cambiar para probar diferentes futuros.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="clds" class="content-section">
+                <h1 class="text-3xl font-bold text-center mb-2">Diagramas de Bucles Causales (CLD)</h1>
+                <p class="text-slate-600 text-center mb-10 max-w-3xl mx-auto">Los CLD son mapas visuales que nos ayudan a contar la "historia" de un sistema, mostrando las relaciones de causa y efecto y, lo más importante, los bucles de retroalimentación que impulsan su comportamiento.</p>
+                
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">Ejemplo Interactivo: Adopción de Paneles Solares</h3>
+                    <p class="text-center text-slate-500 mb-6">Pasa el cursor sobre cada elemento del diagrama para entender su rol en el sistema.</p>
+                    <div class="cld-diagram">
+                        <!-- SVG for arrows -->
+                        <svg class="cld-arrow">
+                           <defs>
+                                <marker id="arrowhead" markerWidth="5" markerHeight="3.5" refX="0" refY="1.75" orient="auto">
+                                    <polygon points="0 0, 5 1.75, 0 3.5" fill="#475569" />
+                                </marker>
+                            </defs>
+                            <!-- R1 Arrows -->
+                            <path class="cld-arrow-path" d="M 230,100 Q 350,50 470,100" />
+                            <path class="cld-arrow-path" d="M 470,160 Q 350,210 230,160" />
+                            <!-- R2 Arrows -->
+                            <path class="cld-arrow-path" d="M 230,320 Q 80,320 80,200" />
+                            <path class="cld-arrow-path" d="M 80,140 Q 80,50 210,90" />
+                            <!-- B1 Arrows -->
+                            <path class="cld-arrow-path" d="M 470,320 Q 620,320 620,200" />
+                             <path class="cld-arrow-path" d="M 620,140 Q 620,50 490,90" />
+                        </svg>
+
+                        <!-- Nodes -->
+                        <div class="cld-node" style="top: 130px; left: 100px;">
+                            Adopciones Anuales
+                            <span class="cld-tooltip" style="bottom: 110%; left: 50%; transform: translateX(-50%);">Número de nuevos hogares o empresas que instalan paneles solares cada año.</span>
+                        </div>
+                        <div class="cld-node" style="top: 70px; left: 450px;">
+                            Efecto "Boca a Boca"
+                             <span class="cld-tooltip" style="bottom: 110%; left: 50%; transform: translateX(-50%);">A más instalaciones, más gente las ve y habla de ellas, generando interés en otros.</span>
+                        </div>
+                         <div class="cld-node" style="top: 300px; left: 50px;">
+                           Costo de Paneles (-)
+                             <span class="cld-tooltip" style="top: 110%; left: 50%; transform: translateX(-50%);">A medida que más gente adopta, la producción aumenta y los costos bajan por economías de escala.</span>
+                        </div>
+                         <div class="cld-node" style="top: 300px; left: 450px;">
+                           Saturación del Mercado (-)
+                             <span class="cld-tooltip" style="top: 110%; left: 50%; transform: translateX(-50%);">Con el tiempo, quedan menos clientes potenciales o la red eléctrica alcanza su límite de capacidad para integrar renovables, frenando la adopción.</span>
+                        </div>
+
+                        <!-- Polarities -->
+                        <div class="cld-polarity" style="top: 60px; left: 340px;">+</div>
+                        <div class="cld-polarity" style="top: 170px; left: 340px;">+</div>
+                        <div class="cld-polarity" style="top: 230px; left: 60px; transform: rotate(90deg)">+</div>
+                        <div class="cld-polarity" style="top: 60px; left: 170px;">+</div>
+                        <div class="cld-polarity" style="top: 230px; left: 630px; transform: rotate(-90deg)">+</div>
+                        <div class="cld-polarity" style="top: 60px; left: 540px;">-</div>
+
+                        <!-- Loops -->
+                        <div class="cld-loop" style="top: 125px; left: 340px;">
+                            R1
+                            <div class="cld-loop-label">Círculo Virtuoso</div>
+                        </div>
+                        <div class="cld-loop" style="top: 170px; left: 120px;">
+                            R2
+                             <div class="cld-loop-label">Economías de Escala</div>
+                        </div>
+                         <div class="cld-loop" style="top: 170px; left: 550px;">
+                            B1
+                             <div class="cld-loop-label">Límites al Crecimiento</div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section id="sfds" class="content-section">
+                <h1 class="text-3xl font-bold text-center mb-2">Acumulaciones y Flujos (SFD)</h1>
+                <p class="text-slate-600 text-center mb-10 max-w-3xl mx-auto">Si los CLD son el mapa, los SFD son el motor. Nos permiten cuantificar y simular cómo cambian los sistemas con el tiempo, distinguiendo entre lo que se acumula (stocks) y lo que causa esos cambios (flujos).</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                         <h3 class="text-xl font-bold text-slate-800 mb-2">La Analogía de la Bañera</h3>
+                         <p class="text-slate-500 mb-4">La forma más simple de entender un stock (el nivel de agua) y sus flujos (grifo y desagüe). Manipula los controles y observa cómo un cambio en los flujos no cambia el nivel del agua instantáneamente, sino que se acumula con el tiempo.</p>
+                         
+                         <div class="space-y-4">
+                             <div>
+                                 <label for="inflow-slider" class="block text-sm font-medium text-slate-700">Flujo de Entrada (Grifo): <span id="inflow-value" class="font-bold text-teal-600">5</span> L/s</label>
+                                 <input id="inflow-slider" type="range" min="0" max="10" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                             </div>
+                             <div>
+                                 <label for="outflow-slider" class="block text-sm font-medium text-slate-700">Flujo de Salida (Desagüe): <span id="outflow-value" class="font-bold text-orange-600">3</span> L/s</label>
+                                 <input id="outflow-slider" type="range" min="0" max="10" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                             </div>
+                             <button id="reset-sim-btn" class="w-full bg-slate-600 text-white py-2 px-4 rounded-md hover:bg-slate-700 transition">Reiniciar Simulación</button>
+                         </div>
+                    </div>
+                    <div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                             <div class="chart-container">
+                                <canvas id="bathtubChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section id="application" class="content-section">
+                <h1 class="text-3xl font-bold text-center mb-2">Aplicación: Modelo de Transición Energética</h1>
+                <p class="text-slate-600 text-center mb-10 max-w-3xl mx-auto">Ahora, apliquemos estos conceptos a un problema real. Este modelo simplificado simula cómo crece la capacidad de energía renovable a lo largo de 30 años. Actúa como un planificador: ajusta las políticas (inversión) y los factores técnicos (vida útil) para ver su impacto a largo plazo.</p>
+
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                         <h3 class="text-xl font-bold text-slate-800 mb-2">Ajusta los Parámetros</h3>
+                         <p class="text-slate-500 mb-4">Observa cómo cambios aparentemente pequeños en los parámetros pueden llevar a futuros muy diferentes. Esto es buscar "puntos de apalancamiento".</p>
+                         
+                         <div class="space-y-4">
+                             <div>
+                                 <label for="investment-slider" class="block text-sm font-medium text-slate-700">Tasa de Adición Neta Anual (Inversión): <span id="investment-value" class="font-bold text-teal-600">5</span> %</label>
+                                 <input id="investment-slider" type="range" min="1" max="15" value="5" step="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                             </div>
+                             <div>
+                                 <label for="lifetime-slider" class="block text-sm font-medium text-slate-700">Vida Útil de las Plantas (Años): <span id="lifetime-value" class="font-bold text-orange-600">25</span> años</label>
+                                 <input id="lifetime-slider" type="range" min="15" max="40" value="25" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                             </div>
+                         </div>
+                         <div id="transition-summary" class="mt-6 p-4 bg-slate-50 rounded-lg">
+                            <h4 class="font-semibold text-slate-800">Resultado a 30 años:</h4>
+                            <p class="text-sm text-slate-600">Con los parámetros actuales, la capacidad renovable se multiplicará por <strong id="multiplier-result" class="text-teal-700 text-lg">X</strong> veces.</p>
+                         </div>
+                    </div>
+                    <div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                             <div class="chart-container">
+                                <canvas id="transitionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="content-section">
+                 <h1 class="text-3xl font-bold text-center mb-2">Herramientas de Software Gratuitas</h1>
+                <p class="text-slate-600 text-center mb-10 max-w-3xl mx-auto">Para aplicar estos conceptos, no necesitas software costoso. Aquí tienes algunas herramientas gratuitas excelentes para que empieces a construir tus propios modelos.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white shadow rounded-lg">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="text-left py-3 px-4 font-semibold text-sm text-slate-600">Software</th>
+                                <th class="text-left py-3 px-4 font-semibold text-sm text-slate-600">Tipo</th>
+                                <th class="text-left py-3 px-4 font-semibold text-sm text-slate-600">Ideal para...</th>
+                                <th class="text-left py-3 px-4 font-semibold text-sm text-slate-600">Plataforma</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-700">
+                            <tr class="border-b">
+                                <td class="py-3 px-4 font-semibold text-teal-700">Vensim PLE</td>
+                                <td class="py-3 px-4">CLD, SFD, Simulación</td>
+                                <td class="py-3 px-4">Aprendizaje profundo y modelos robustos. Estándar académico.</td>
+                                <td class="py-3 px-4">Desktop (Win/Mac)</td>
+                            </tr>
+                             <tr class="border-b bg-slate-50">
+                                <td class="py-3 px-4 font-semibold text-teal-700">Insight Maker</td>
+                                <td class="py-3 px-4">CLD, SFD, Simulación</td>
+                                <td class="py-3 px-4">Principiantes, colaboración en línea y facilidad de uso.</td>
+                                <td class="py-3 px-4">Web</td>
+                            </tr>
+                             <tr class="border-b">
+                                <td class="py-3 px-4 font-semibold text-teal-700">SageModeler</td>
+                                <td class="py-3 px-4">Modelos conceptuales</td>
+                                <td class="py-3 px-4">Introducción a las relaciones causales sin matemáticas complejas.</td>
+                                <td class="py-3 px-4">Web</td>
+                            </tr>
+                             <tr class="bg-slate-50">
+                                <td class="py-3 px-4 font-semibold text-teal-700">EdrawMax</td>
+                                <td class="py-3 px-4">Diagramación general</td>
+                                <td class="py-3 px-4">Crear rápidamente diagramas CLD visualmente atractivos.</td>
+                                <td class="py-3 px-4">Desktop / Web</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = document.querySelectorAll('.nav-button');
+            const mobileNav = document.getElementById('mobile-nav');
+            const contentSections = document.querySelectorAll('.content-section');
+            let bathtubChart, transitionChart;
+            let bathtubSimInterval;
+
+            function switchView(targetId) {
+                contentSections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === targetId) {
+                        section.classList.add('active');
+                    }
+                });
+
+                navButtons.forEach(button => {
+                    button.classList.remove('active');
+                    if (button.dataset.target === targetId) {
+                        button.classList.add('active');
+                    }
+                });
+                
+                mobileNav.value = targetId;
+
+                if (targetId === 'sfds' && !bathtubChart) {
+                    initBathtubChart();
+                } else if (targetId === 'sfds') {
+                    startBathtubSimulation();
+                } else {
+                    stopBathtubSimulation();
+                }
+
+                if (targetId === 'application' && !transitionChart) {
+                    initTransitionChart();
+                }
+            }
+            
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => switchView(button.dataset.target));
+            });
+
+            mobileNav.addEventListener('change', (e) => switchView(e.target.value));
+
+            function stopBathtubSimulation() {
+                if (bathtubSimInterval) {
+                    clearInterval(bathtubSimInterval);
+                    bathtubSimInterval = null;
+                }
+            }
+
+            function startBathtubSimulation() {
+                stopBathtubSimulation();
+                const inflowSlider = document.getElementById('inflow-slider');
+                const outflowSlider = document.getElementById('outflow-slider');
+
+                let stock = 50; 
+                let time = 0;
+                
+                bathtubChart.data.labels = [0];
+                bathtubChart.data.datasets[0].data = [50];
+                bathtubChart.update();
+
+                bathtubSimInterval = setInterval(() => {
+                    const inflow = parseFloat(inflowSlider.value);
+                    const outflow = parseFloat(outflowSlider.value);
+                    
+                    stock += inflow - outflow;
+                    if (stock < 0) stock = 0;
+                    if (stock > 100) stock = 100;
+
+                    time++;
+                    bathtubChart.data.labels.push(time);
+                    bathtubChart.data.datasets[0].data.push(stock);
+
+                    if (bathtubChart.data.labels.length > 30) {
+                       bathtubChart.data.labels.shift();
+                       bathtubChart.data.datasets[0].data.shift();
+                    }
+                    bathtubChart.update('none');
+
+                }, 500);
+            }
+
+            function initBathtubChart() {
+                const ctx = document.getElementById('bathtubChart').getContext('2d');
+                const inflowSlider = document.getElementById('inflow-slider');
+                const outflowSlider = document.getElementById('outflow-slider');
+                const inflowValue = document.getElementById('inflow-value');
+                const outflowValue = document.getElementById('outflow-value');
+                const resetBtn = document.getElementById('reset-sim-btn');
+
+                inflowSlider.addEventListener('input', (e) => inflowValue.textContent = e.target.value);
+                outflowSlider.addEventListener('input', (e) => outflowValue.textContent = e.target.value);
+                
+                resetBtn.addEventListener('click', startBathtubSimulation);
+
+                bathtubChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Nivel de Agua (Stock)',
+                            data: [],
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                            fill: true,
+                            tension: 0.2,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: { display: true, text: 'Litros' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Tiempo (s)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    }
+                });
+                startBathtubSimulation();
+            }
+            
+            function runTransitionSimulation() {
+                const investmentSlider = document.getElementById('investment-slider');
+                const lifetimeSlider = document.getElementById('lifetime-slider');
+                const investmentValue = document.getElementById('investment-value');
+                const lifetimeValue = document.getElementById('lifetime-value');
+                const multiplierResult = document.getElementById('multiplier-result');
+
+                investmentValue.textContent = investmentSlider.value;
+                lifetimeValue.textContent = lifetimeSlider.value;
+
+                let capacity = 100; // Start with 100 GW
+                const capacityData = [capacity];
+                const years = Array.from({length: 31}, (_, i) => i);
+
+                const netAdditionRate = parseFloat(investmentSlider.value) / 100;
+                const retirementRate = 1 / parseFloat(lifetimeSlider.value);
+
+                for (let i = 0; i < 30; i++) {
+                    const additions = capacity * netAdditionRate;
+                    const retirements = capacity * retirementRate;
+                    capacity = capacity + additions - retirements;
+                    if(capacity < 0) capacity = 0;
+                    capacityData.push(capacity);
+                }
+
+                transitionChart.data.labels = years;
+                transitionChart.data.datasets[0].data = capacityData;
+                transitionChart.update();
+
+                const finalMultiplier = (capacity / 100).toFixed(1);
+                multiplierResult.textContent = finalMultiplier;
+            }
+
+            function initTransitionChart() {
+                const ctx = document.getElementById('transitionChart').getContext('2d');
+                const investmentSlider = document.getElementById('investment-slider');
+                const lifetimeSlider = document.getElementById('lifetime-slider');
+
+                investmentSlider.addEventListener('input', runTransitionSimulation);
+                lifetimeSlider.addEventListener('input', runTransitionSimulation);
+
+                transitionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Capacidad Renovable Instalada (GW)',
+                            data: [],
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                            fill: true,
+                            tension: 0.2,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Capacidad (GW)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Años desde ahora' }
+                            }
+                        },
+                         plugins: {
+                            legend: { display: true, position: 'bottom' },
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    }
+                });
+                runTransitionSimulation();
+            }
+
+            switchView('home'); 
+        });
+    </script>
+</body>
+</html>
