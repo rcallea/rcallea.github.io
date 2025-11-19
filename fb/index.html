@@ -88,21 +88,23 @@
       perspective: 1600px;
     }
 
-    .page-spread {
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      gap: 0; /* pegadas, sin hueco ni solapamiento */
-    }
+	.page-spread {
+	  display: flex;
+	  justify-content: center;
+	  align-items: stretch;
+	  gap: 0;              /* pegadas */
+	  flex-wrap: nowrap;   /* NO permitir que se apilen */
+	  overflow-x: auto;    /* si no caben, scroll horizontal */
+	}
 
-    .page {
-      flex: 1 1 50%;
-      max-width: 50%;
-      padding: 0; /* sin padding para que se junten justo al centro */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+	.page {
+	  flex: 0 0 50%;       /* cada página ocupa el 50% del ancho del spread */
+	  max-width: 50%;
+	  padding: 0;
+	  display: flex;
+	  justify-content: center;
+	  align-items: center;
+	}
 
     .page-inner {
       position: relative;
@@ -224,21 +226,11 @@
       min-width: 70px;
     }
 
-    @media (max-width: 768px) {
-      .flipbook-viewer {
-        padding: 0.8rem;
-      }
-      .page-spread {
-        flex-direction: column; /* en móvil, una página debajo de la otra */
-      }
-      .page {
-        max-width: 100%;
-      }
-      .page-left,
-      .page-right {
-        border: none;
-      }
-    }
+	@media (max-width: 768px) {
+	  .flipbook-viewer {
+		padding: 0.8rem;
+	  }
+	}
 
     @media (max-width: 640px) {
       .flipbook-header {
