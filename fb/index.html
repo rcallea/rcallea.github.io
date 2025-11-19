@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Flipbook PDF - Doble página</title>
+  <title>Flipbook PDF - Doble página (ajustado)</title>
 
-  <!-- PDF.js (versión clásica estable) -->
+  <!-- PDF.js local -->
   <script src="libs/pdfjs/pdf.js"></script>
 
   <style>
@@ -79,6 +79,8 @@
       position: relative;
       background: radial-gradient(circle at top, #0f172a 0%, #020617 50%, #020617 100%);
       padding: 1.25rem;
+      /* que el viewer tenga algo de alto para calcular el ajuste */
+      min-height: 60vh;
     }
 
     .page-wrapper {
@@ -86,25 +88,28 @@
       margin: 0 auto;
       max-width: 100%;
       perspective: 1600px;
+      overflow: hidden; /* recorta solo el “marco” del libro, no las páginas internas */
     }
 
-	.page-spread {
-	  display: flex;
-	  justify-content: center;
-	  align-items: stretch;
-	  gap: 0;              /* pegadas */
-	  flex-wrap: nowrap;   /* NO permitir que se apilen */
-	  overflow-x: auto;    /* si no caben, scroll horizontal */
-	}
+    /* ---------- DOBLE PÁGINA SIEMPRE LADO A LADO ---------- */
+    .page-spread {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: stretch;
+      gap: 0;
+      flex-wrap: nowrap;   /* nunca se apilan una debajo de la otra */
+      overflow-x: auto;    /* si no caben, scroll horizontal */
+      overflow-y: hidden;
+    }
 
-	.page {
-	  flex: 0 0 50%;       /* cada página ocupa el 50% del ancho del spread */
-	  max-width: 50%;
-	  padding: 0;
-	  display: flex;
-	  justify-content: center;
-	  align-items: center;
-	}
+    .page {
+      flex: 0 0 auto;      /* ancho definido por el canvas */
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
     .page-inner {
       position: relative;
@@ -113,7 +118,7 @@
     }
 
     .page-left {
-      border-right: 2px solid #020617; /* “lomo” del libro */
+      border-right: 2px solid #020617; /* “lomo” */
     }
 
     .page-right {
@@ -122,32 +127,33 @@
 
     canvas {
       display: block;
-      width: 100%;   /* responsive */
-      height: auto;  /* mantiene proporción */
       background: #111827;
-      border-radius: 0;           /* sin bordes redondeados para que no se vea montado */
+      border-radius: 0;
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+	  position: relative;
+	  z-index: 1;
+      /* el tamaño visible lo controla JS (style.width / style.height) */
     }
 
-    /* Capa para enlaces sobre el canvas */
-    .link-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none; /* solo los enlaces recibirán eventos */
-    }
+    /* Capa para enlaces clicables */
+	.link-layer {
+	  position: absolute;
+	  inset: 0;
+	  z-index: 10;               /* nos aseguramos de que quede por encima del canvas */
+	  pointer-events: none; /* permite que SOLO .pdf-link reciba clicks */
+	}
 
-    .pdf-link {
-      position: absolute;
-      display: block;
-      pointer-events: auto;
-      text-decoration: none;
-    }
+	.pdf-link {
+	  position: absolute;
+	  pointer-events: auto; /* recibe clics */
+	  cursor: pointer;          /* feedback visual de que es clicable */
+	}
 
     .pdf-link:hover {
-      outline: 2px solid rgba(250, 204, 21, 0.6); /* amarillo suave para depurar / feedback */
+      outline: 2px solid rgba(250, 204, 21, 0.6);
     }
 
-    /* Efecto de “pasar página” en doble página */
+    /* Animación pasar página */
     .page-wrapper.flip-next {
       animation: flipNext 0.55s ease-out;
     }
@@ -226,11 +232,12 @@
       min-width: 70px;
     }
 
-	@media (max-width: 768px) {
-	  .flipbook-viewer {
-		padding: 0.8rem;
-	  }
-	}
+    @media (max-width: 768px) {
+      .flipbook-viewer {
+        padding: 0.8rem;
+      }
+      /* NOTA: no tocamos page-spread ni page para que siga doble página */
+    }
 
     @media (max-width: 640px) {
       .flipbook-header {
@@ -250,7 +257,7 @@
   <div class="flipbook-container">
     <header class="flipbook-header">
       <div class="flipbook-title">
-        📖 Flipbook PDF doble página (HTML, CSS, JS)
+        📖 Flipbook PDF doble página
       </div>
       <div class="flipbook-file-input">
         <label>
@@ -304,43 +311,38 @@
   <script>
     // Compatibilidad con PDF.js
     var pdfjsLib = window["pdfjsLib"] || window["pdfjs-dist/build/pdf"];
-
     if (!pdfjsLib) {
-      console.error("No se pudo encontrar pdfjsLib. Revisa la URL del script de PDF.js.");
+      console.error("No se pudo encontrar pdfjsLib. Revisa que libs/pdfjs/pdf.js exista.");
     } else {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "libs/pdfjs/pdf.worker.js";
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "libs/pdfjs/pdf.worker.js";
     }
 
-    // -------- CONFIGURACIÓN BÁSICA --------
-    // PDF por defecto:
     const DEFAULT_PDF_URL = "libro.pdf";
 
-    const leftCanvas = document.getElementById("leftCanvas");
-    const rightCanvas = document.getElementById("rightCanvas");
-    const leftCtx = leftCanvas.getContext("2d");
-    const rightCtx = rightCanvas.getContext("2d");
-    const pageWrapper = document.getElementById("pageWrapper");
+    const leftCanvas   = document.getElementById("leftCanvas");
+    const rightCanvas  = document.getElementById("rightCanvas");
+    const leftCtx      = leftCanvas.getContext("2d");
+    const rightCtx     = rightCanvas.getContext("2d");
+    const pageWrapper  = document.getElementById("pageWrapper");
+    const leftLinks    = document.getElementById("leftLinks");
+    const rightLinks   = document.getElementById("rightLinks");
 
-    const leftLinks = document.getElementById("leftLinks");
-    const rightLinks = document.getElementById("rightLinks");
-
-    const prevPageBtn = document.getElementById("prevPageBtn");
-    const nextPageBtn = document.getElementById("nextPageBtn");
-    const zoomInBtn = document.getElementById("zoomInBtn");
-    const zoomOutBtn = document.getElementById("zoomOutBtn");
+    const prevPageBtn  = document.getElementById("prevPageBtn");
+    const nextPageBtn  = document.getElementById("nextPageBtn");
+    const zoomInBtn    = document.getElementById("zoomInBtn");
+    const zoomOutBtn   = document.getElementById("zoomOutBtn");
     const zoomResetBtn = document.getElementById("zoomResetBtn");
-    const pageInfo = document.getElementById("pageInfo");
-    const zoomInfo = document.getElementById("zoomInfo");
-    const fileInput = document.getElementById("fileInput");
+    const pageInfo     = document.getElementById("pageInfo");
+    const zoomInfo     = document.getElementById("zoomInfo");
+    const fileInput    = document.getElementById("fileInput");
 
     let pdfDoc = null;
     let totalPages = 0;
-
-    // Spreads: [{left, right}, ...]
-    // Primer spread: {left: null, right: 1} (portada a la derecha)
-    let spreads = [];
+    let spreads = [];           // [{left, right}, ...]
     let currentSpreadIndex = 0;
+
+    // Viewport base (escala 1) de la página 1 para calcular auto-ajuste al alto
+    let baseViewport = null;
 
     // Zoom
     let baseScale = 1.0;
@@ -352,7 +354,7 @@
     let pageRendering = false;
     let pendingSpreadIndex = null;
 
-    // -------- AYUDAS PARA SPREADS --------
+    // Construye spreads: portada a la derecha, luego pares
     function buildSpreads(numPages) {
       const result = [];
       // Primer spread: solo página 1 a la derecha
@@ -366,100 +368,160 @@
       return result;
     }
 
-    // -------- RENDERIZADO DE UNA PÁGINA (CANVAS + ENLACES) --------
-    function renderPageToCanvas(pageNum, canvas, ctx, linkLayer) {
-      if (!pageNum) {
-        // No hay página; se limpia
-        linkLayer.innerHTML = "";
-        const blankWidth = 800;
-        const blankHeight = 1000;
-        canvas.width = blankWidth;
-        canvas.height = blankHeight;
-        canvas.style.width = "100%";
-        canvas.style.height = "auto";
-        ctx.clearRect(0, 0, blankWidth, blankHeight);
-        return Promise.resolve();
-      }
+    // Calcula escala para ajustar la altura al viewport
+    function computeBaseScale() {
+      if (!baseViewport) return 1.0;
+      const viewer = document.querySelector(".flipbook-viewer");
+      const availableHeight = viewer
+        ? viewer.clientHeight
+        : window.innerHeight * 0.8;
 
-      return pdfDoc.getPage(pageNum).then(function (page) {
-        const viewport = page.getViewport({ scale: currentScale });
-        const outputScale = window.devicePixelRatio || 1;
-
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-
-        // Responsive: el canvas siempre ocupa el ancho disponible
-        canvas.style.width = "100%";
-        canvas.style.height = "auto";
-
-        const transform = outputScale !== 1
-          ? [outputScale, 0, 0, outputScale, 0, 0]
-          : null;
-
-        linkLayer.innerHTML = "";
-
-        const renderTask = page.render({
-          canvasContext: ctx,
-          viewport: viewport,
-          transform: transform
-        });
-
-        // Cuando termina el render, creamos la capa de enlaces
-        return renderTask.promise.then(function () {
-          return page.getAnnotations();
-        }).then(function (annots) {
-          annots.forEach(function (a) {
-            if (a.subtype === "Link" && a.rect) {
-              // Sólo manejamos enlaces externos (URL) aquí
-              if (!a.url) return;
-
-              const rect = a.rect;
-              const x1 = Math.min(rect[0], rect[2]);
-              const y1 = Math.min(rect[1], rect[3]); // lower-left y
-              const x2 = Math.max(rect[0], rect[2]);
-              const y2 = Math.max(rect[1], rect[3]); // upper-right y
-
-              const rectWidth = x2 - x1;
-              const rectHeight = y2 - y1;
-
-              // PDF usa origen en la esquina inferior izquierda
-              // CSS usa origen en la esquina superior izquierda
-              const leftPct = (x1 / viewport.width) * 100;
-              const widthPct = (rectWidth / viewport.width) * 100;
-              const bottomFromBottom = y1;
-              const topFromTop = viewport.height - bottomFromBottom - rectHeight;
-              const topPct = (topFromTop / viewport.height) * 100;
-              const heightPct = (rectHeight / viewport.height) * 100;
-
-              const linkEl = document.createElement("a");
-              linkEl.href = a.url;
-              linkEl.target = "_blank";
-              linkEl.className = "pdf-link";
-              linkEl.style.left = leftPct + "%";
-              linkEl.style.top = topPct + "%";
-              linkEl.style.width = widthPct + "%";
-              linkEl.style.height = heightPct + "%";
-
-              linkLayer.appendChild(linkEl);
-            }
-          });
-        });
-      });
+      // Dejamos un margen del 10%
+      const scale = (availableHeight * 0.9) / baseViewport.height;
+      return scale > 0 ? scale : 1.0;
     }
 
-    // -------- RENDERIZADO DE DOBLE PÁGINA --------
+    function updateZoomDisplay() {
+      zoomInfo.textContent = `${Math.round(currentScale * 100)}%`;
+    }
+
+    // Renderiza una sola página en su canvas con enlaces
+	function renderPageToCanvas(pageNum, canvas, ctx, linkLayer) {
+	  if (!pageNum) {
+		// Página en blanco: limpiamos y salimos
+		linkLayer.innerHTML = "";
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		return Promise.resolve();
+	  }
+
+	  return pdfDoc.getPage(pageNum).then(function (page) {
+		const viewport = page.getViewport({ scale: currentScale });
+		const outputScale = window.devicePixelRatio || 1;
+
+		canvas.width  = Math.floor(viewport.width * outputScale);
+		canvas.height = Math.floor(viewport.height * outputScale);
+
+		// Tamaño visible (depende del zoom)
+		canvas.style.width  = viewport.width + "px";
+		canvas.style.height = viewport.height + "px";
+
+		const transform = outputScale !== 1
+		  ? [outputScale, 0, 0, outputScale, 0, 0]
+		  : null;
+
+		linkLayer.innerHTML = "";
+
+		const renderTask = page.render({
+		  canvasContext: ctx,
+		  viewport: viewport,
+		  transform: transform
+		});
+
+		// ⬇⬇ AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+		return renderTask.promise
+		  .then(function () {
+			// usamos intent:'display' para asegurarnos de obtener las anotaciones visibles
+			return page.getAnnotations({ intent: "display" });
+		  })
+		  .then(function (annots) {
+		  annots.forEach(function (a) {
+			  if (a.subtype !== "Link" || !a.rect) return;
+
+			  // 1. Convertimos el rectángulo del PDF a coordenadas de viewport
+			  //    (origen arriba-izquierda, como CSS)
+			  const vpRect = viewport.convertToViewportRectangle(a.rect);
+			  const x1 = Math.min(vpRect[0], vpRect[2]);
+			  const y1 = Math.min(vpRect[1], vpRect[3]);
+			  const x2 = Math.max(vpRect[0], vpRect[2]);
+			  const y2 = Math.max(vpRect[1], vpRect[3]);
+
+			  const rectWidth  = x2 - x1;
+			  const rectHeight = y2 - y1;
+
+			  // 2. Pasamos a porcentajes respecto al viewport
+			  const leftPct   = (x1 / viewport.width)  * 100;
+			  const topPct    = (y1 / viewport.height) * 100;
+			  const widthPct  = (rectWidth  / viewport.width)  * 100;
+			  const heightPct = (rectHeight / viewport.height) * 100;
+
+			  const linkEl = document.createElement("a");
+			  linkEl.className = "pdf-link";
+			  linkEl.style.left   = leftPct + "%";
+			  linkEl.style.top    = topPct + "%";
+			  linkEl.style.width  = widthPct + "%";
+			  linkEl.style.height = heightPct + "%";
+
+			  if (a.url) {
+				// 🔗 Enlace externo
+				linkEl.href = a.url;
+				linkEl.target = "_blank";
+			  } else if (a.dest) {
+				// 📄 Enlace interno (otra página del mismo PDF)
+				linkEl.href = "#";
+				linkEl.addEventListener("click", function (e) {
+				  e.preventDefault();
+
+				  pdfDoc.getDestination(a.dest)
+					.then(function (destArray) {
+					  if (!destArray) return;
+					  const ref = destArray[0];
+					  return pdfDoc.getPageIndex(ref);
+					})
+					.then(function (pageIndex) {
+					  if (pageIndex == null) return;
+					  const targetPage = pageIndex + 1;
+
+					  let targetSpreadIndex = currentSpreadIndex;
+					  for (let i = 0; i < spreads.length; i++) {
+						const s = spreads[i];
+						if (s.left === targetPage || s.right === targetPage) {
+						  targetSpreadIndex = i;
+						  break;
+						}
+					  }
+
+					  currentSpreadIndex = targetSpreadIndex;
+					  queueRenderSpread(currentSpreadIndex);
+					  updateButtons();
+					})
+					.catch(function (err) {
+					  console.error("Error navegando a enlace interno:", err);
+					});
+				});
+			  } else {
+				return; // sin url ni dest, no hacemos nada
+			  }
+
+			  linkLayer.appendChild(linkEl);
+			});
+		  });
+	  });
+	}
+
+    // Hace que una página en blanco tenga el mismo tamaño que otra
+    function copySizeAndClear(sourceCanvas, targetCanvas, targetCtx, targetLinks) {
+      targetLinks.innerHTML = "";
+      const w = sourceCanvas.width;
+      const h = sourceCanvas.height;
+      targetCanvas.width  = w;
+      targetCanvas.height = h;
+      targetCanvas.style.width  = sourceCanvas.style.width;
+      targetCanvas.style.height = sourceCanvas.style.height;
+      targetCtx.clearRect(0, 0, w, h);
+    }
+
+    // Renderiza el spread actual (doble página)
     function renderSpread(spreadIndex, flipDirection) {
       if (!pdfDoc || !spreads.length) return;
       const spread = spreads[spreadIndex];
-      const leftPageNum = spread.left;
+      const leftPageNum  = spread.left;
       const rightPageNum = spread.right;
 
       pageRendering = true;
 
-      // Animación de pasar página
       if (flipDirection === "next") {
         pageWrapper.classList.remove("flip-prev");
-        void pageWrapper.offsetWidth; // reinicia animación
+        void pageWrapper.offsetWidth;
         pageWrapper.classList.add("flip-next");
       } else if (flipDirection === "prev") {
         pageWrapper.classList.remove("flip-next");
@@ -468,17 +530,36 @@
       }
 
       const tasks = [];
-      tasks.push(
-        renderPageToCanvas(leftPageNum, leftCanvas, leftCtx, leftLinks)
-      );
-      tasks.push(
-        renderPageToCanvas(rightPageNum, rightCanvas, rightCtx, rightLinks)
-      );
+
+      if (leftPageNum) {
+        tasks.push(renderPageToCanvas(leftPageNum, leftCanvas, leftCtx, leftLinks));
+      } else {
+        // Solo limpiamos; la igualación de tamaño se hace luego, según la derecha
+        leftLinks.innerHTML = "";
+        leftCtx.clearRect(0, 0, leftCanvas.width, leftCanvas.height);
+      }
+
+      if (rightPageNum) {
+        tasks.push(renderPageToCanvas(rightPageNum, rightCanvas, rightCtx, rightLinks));
+      } else {
+        rightLinks.innerHTML = "";
+        rightCtx.clearRect(0, 0, rightCanvas.width, rightCanvas.height);
+      }
 
       Promise.all(tasks)
         .then(function () {
+          // Si es portada (left null, right != null), igualamos el ancho del blanco al de la derecha
+          if (!leftPageNum && rightPageNum) {
+            copySizeAndClear(rightCanvas, leftCanvas, leftCtx, leftLinks);
+          }
+          // Si la última página queda sola a la izquierda (left != null, right null)
+          if (leftPageNum && !rightPageNum) {
+            copySizeAndClear(leftCanvas, rightCanvas, rightCtx, rightLinks);
+          }
+
           pageRendering = false;
           updatePageInfo();
+
           if (pendingSpreadIndex !== null) {
             const nextIndex = pendingSpreadIndex;
             pendingSpreadIndex = null;
@@ -502,7 +583,6 @@
       }
     }
 
-    // -------- NAVEGACIÓN --------
     function onPrevSpread() {
       if (!pdfDoc || currentSpreadIndex <= 0) return;
       currentSpreadIndex--;
@@ -517,16 +597,11 @@
       updateButtons();
     }
 
-    // -------- ZOOM --------
-    function updateZoomDisplay() {
-      zoomInfo.textContent = `${Math.round(currentScale * 100)}%`;
-    }
-
     function setZoom(newScale) {
       if (!pdfDoc) return;
       currentScale = Math.min(maxScale, Math.max(minScale, newScale));
       updateZoomDisplay();
-      queueRenderSpread(currentSpreadIndex); // re-render sin anim extra
+      queueRenderSpread(currentSpreadIndex);
     }
 
     function onZoomIn() {
@@ -541,54 +616,6 @@
       setZoom(baseScale);
     }
 
-    // -------- CARGA DE PDF --------
-    function loadPdfFromUrl(url) {
-      if (!pdfjsLib || !url) return;
-
-      const loadingTask = pdfjsLib.getDocument(url);
-      loadingTask.promise.then(function (pdf) {
-        pdfDoc = pdf;
-        totalPages = pdf.numPages;
-        spreads = buildSpreads(totalPages);
-        currentSpreadIndex = 0;
-        baseScale = 1.0;
-        currentScale = baseScale;
-        updateButtons();
-        updateZoomDisplay();
-        renderSpread(currentSpreadIndex);
-      }).catch(function (err) {
-        console.error("Error cargando PDF:", err);
-        alert("No se pudo cargar el PDF. Revisa la ruta o el CORS.");
-      });
-    }
-
-    function loadPdfFromFile(file) {
-      if (!pdfjsLib || !file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const typedArray = new Uint8Array(e.target.result);
-        const loadingTask = pdfjsLib.getDocument({ data: typedArray });
-
-        loadingTask.promise.then(function (pdf) {
-          pdfDoc = pdf;
-          totalPages = pdf.numPages;
-          spreads = buildSpreads(totalPages);
-          currentSpreadIndex = 0;
-          baseScale = 1.0;
-          currentScale = baseScale;
-          updateButtons();
-          updateZoomDisplay();
-          renderSpread(currentSpreadIndex);
-        }).catch(function (err) {
-          console.error("Error cargando PDF desde archivo:", err);
-          alert("No se pudo leer el archivo PDF.");
-        });
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    // -------- UI --------
     function updateButtons() {
       prevPageBtn.disabled = !pdfDoc || currentSpreadIndex <= 0;
       nextPageBtn.disabled = !pdfDoc || currentSpreadIndex >= spreads.length - 1;
@@ -617,14 +644,78 @@
       }
     }
 
-    // Eventos botones
+    // Carga PDF desde URL (libro.pdf por defecto)
+    function loadPdfFromUrl(url) {
+      if (!pdfjsLib || !url) return;
+
+      const loadingTask = pdfjsLib.getDocument(url);
+      loadingTask.promise
+        .then(function (pdf) {
+          pdfDoc = pdf;
+          totalPages = pdf.numPages;
+          return pdfDoc.getPage(1);
+        })
+        .then(function (page1) {
+          // Guardamos viewport base (escala 1) y calculamos escala para alto de ventana
+          baseViewport = page1.getViewport({ scale: 1.0 });
+          baseScale = computeBaseScale();
+          currentScale = baseScale;
+
+          spreads = buildSpreads(totalPages);
+          currentSpreadIndex = 0;
+
+          updateButtons();
+          updateZoomDisplay();
+          renderSpread(currentSpreadIndex);
+        })
+        .catch(function (err) {
+          console.error("Error cargando PDF:", err);
+          alert("No se pudo cargar el PDF. Revisa que 'libro.pdf' esté en la misma carpeta.");
+        });
+    }
+
+    // Carga PDF desde archivo local
+    function loadPdfFromFile(file) {
+      if (!pdfjsLib || !file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const typedArray = new Uint8Array(e.target.result);
+        const loadingTask = pdfjsLib.getDocument({ data: typedArray });
+
+        loadingTask.promise
+          .then(function (pdf) {
+            pdfDoc = pdf;
+            totalPages = pdf.numPages;
+            return pdfDoc.getPage(1);
+          })
+          .then(function (page1) {
+            baseViewport = page1.getViewport({ scale: 1.0 });
+            baseScale = computeBaseScale();
+            currentScale = baseScale;
+
+            spreads = buildSpreads(totalPages);
+            currentSpreadIndex = 0;
+
+            updateButtons();
+            updateZoomDisplay();
+            renderSpread(currentSpreadIndex);
+          })
+          .catch(function (err) {
+            console.error("Error cargando PDF desde archivo:", err);
+            alert("No se pudo leer el archivo PDF.");
+          });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Eventos UI
     prevPageBtn.addEventListener("click", onPrevSpread);
     nextPageBtn.addEventListener("click", onNextSpread);
     zoomInBtn.addEventListener("click", onZoomIn);
     zoomOutBtn.addEventListener("click", onZoomOut);
     zoomResetBtn.addEventListener("click", onZoomReset);
 
-    // Cambio de archivo
     fileInput.addEventListener("change", function (e) {
       const file = e.target.files[0];
       if (file) {
@@ -632,7 +723,6 @@
       }
     });
 
-    // Navegación con teclado
     document.addEventListener("keydown", function (e) {
       if (e.key === "ArrowRight") {
         onNextSpread();
@@ -647,7 +737,17 @@
       }
     });
 
-    // Carga inicial desde URL por defecto
+    // Recalcular escala base cuando cambie el tamaño de la ventana
+    window.addEventListener("resize", function () {
+      if (!pdfDoc || !baseViewport) return;
+      const factor = currentScale / baseScale; // cuánto se había alejado/acercado el usuario
+      baseScale = computeBaseScale();
+      currentScale = baseScale * factor;
+      updateZoomDisplay();
+      queueRenderSpread(currentSpreadIndex);
+    });
+
+    // Carga inicial
     if (DEFAULT_PDF_URL && pdfjsLib) {
       loadPdfFromUrl(DEFAULT_PDF_URL);
     } else {
