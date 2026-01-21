@@ -92,16 +92,16 @@
     }
 
     /* ---------- DOBLE PÁGINA SIEMPRE LADO A LADO ---------- */
-    .page-spread {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: stretch;
-      gap: 0;
-      flex-wrap: nowrap;   /* nunca se apilan una debajo de la otra */
-      overflow-x: auto;    /* si no caben, scroll horizontal */
-      overflow-y: hidden;
-    }
+	.page-spread {
+	  display: flex;
+	  flex-direction: row;
+	  justify-content: flex-start;  /* 👈 IMPORTANTE: ya no centrado */
+	  align-items: stretch;
+	  gap: 0;
+	  flex-wrap: nowrap;            /* sigue siendo una fila continua */
+	  overflow-x: auto;             /* scroll horizontal cuando haga falta */
+	  overflow-y: hidden;
+	}
 
     .page {
       flex: 0 0 auto;      /* ancho definido por el canvas */
